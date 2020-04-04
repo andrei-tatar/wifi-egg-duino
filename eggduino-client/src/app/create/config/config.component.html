@@ -1,38 +1,46 @@
-<mat-checkbox class="mb" [checked]="simplify" (change)="simplify=$event.checked">
-    Simplify segments
-</mat-checkbox>
+<ng-container *ngIf="config$|async as config">
+    <mat-checkbox class="mb" [checked]="config.simplifySegments" (change)="update('simplifySegments', $event.checked)">
+        Simplify segments
+    </mat-checkbox>
 
-<mat-checkbox class="mb" [checked]="optimizeTravel" (change)="optimizeTravel=$event.checked">
-    Optimize travel distances
-</mat-checkbox>
+    <mat-checkbox class="mb" [checked]="config.optimizeTravel" (change)="update('optimizeTravel', $event.checked)">
+        Optimize travel distances
+    </mat-checkbox>
 
-<mat-checkbox *ngIf="optimizeTravel" class="mb" [checked]="reverseSegments" (change)="reverseSegments=$event.checked">
-    Reverse segments
-</mat-checkbox>
+    <mat-checkbox *ngIf="config.optimizeTravel" class="mb" [checked]="config.reverseSegments"
+        (change)="update('reverseSegments', $event.checked)">
+        Reverse segments
+    </mat-checkbox>
 
-<div class="grid-container">
-    <ng-container *ngIf="simplify">
-        <mat-label>Simplify thld.</mat-label>
-        <mat-slider thumbLabel min=".1" max="5" step=".1" [value]="simplifyThreshold"
-            (input)="simplifyThreshold=$event.value">
+    <div class="grid-container">
+        <ng-container *ngIf="config.simplifySegments">
+            <mat-label>Simplify thld.</mat-label>
+            <mat-slider thumbLabel min=".1" max="5" step=".1" [value]="config.simplifyThreshold"
+                (input)="update('simplifyThreshold', $event.value)">
+            </mat-slider>
+            <input matInput type="number" [value]="config.simplifyThreshold"
+                (input)="update('simplifyThreshold', +$event.target.value)" min=".1" max="5" step=".1">
+        </ng-container>
+
+        <mat-label>Hor. scale</mat-label>
+        <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="config.hScale"
+            (input)="update('hScale', $event.value)">
         </mat-slider>
-        <input matInput type="number" [value]="simplifyThreshold" (input)="simplifyThreshold=+$event.target.value"
-            min=".1" max="5" step=".1">
-    </ng-container>
+        <input matInput type="number" [value]="config.hScale" (input)="update('hScale', +$event.target.value)"
+            min=".001" max="3" step=".001">
 
-    <mat-label>Hor. scale</mat-label>
-    <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="hScale" (input)="hScale=$event.value">
-    </mat-slider>
-    <input matInput type="number" [value]="hScale" (input)="hScale=+$event.target.value" min=".001" max="3" step=".001">
+        <mat-label>Ver. scale</mat-label>
+        <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="config.vScale"
+            (input)="update('vScale', $event.value)">
+        </mat-slider>
+        <input matInput type="number" [value]="config.vScale" (input)="update('vScale', +$event.target.value)"
+            min=".001" max="3" step=".001">
 
-    <mat-label>Ver. scale</mat-label>
-    <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="vScale" (input)="vScale=$event.value">
-    </mat-slider>
-    <input matInput type="number" [value]="vScale" (input)="vScale=+$event.target.value" min=".001" max="3" step=".001">
-
-    <mat-label>Ver. offset</mat-label>
-    <mat-slider thumbLabel min="-400" max="400" step="1" [value]="vOffset" (input)="vOffset=$event.value">
-    </mat-slider>
-    <input matInput type="number" [value]="vOffset" (input)="vOffset=+$event.target.value" min="-400" max="400"
-        step="1">
-</div>
+        <mat-label>Ver. offset</mat-label>
+        <mat-slider thumbLabel min="-400" max="400" step="1" [value]="config.vOffset"
+            (input)="update('vOffset', $event.value)">
+        </mat-slider>
+        <input matInput type="number" [value]="config.vOffset" (input)="update('vOffset', +$event.target.value)"
+            min="-400" max="400" step="1">
+    </div>
+</ng-container>

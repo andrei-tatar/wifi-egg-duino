@@ -10,7 +10,7 @@
             <div class="options-container">
                 <mat-form-field>
                     <mat-label>Layers</mat-label>
-                    <mat-select [(value)]="layerResolverType">
+                    <mat-select [value]="layerResolverType$|async" (valueChange)="updateLayerResolveType($event)">
                         <mat-option value="none">None</mat-option>
                         <mat-option value="color">By Color</mat-option>
                         <mat-option value="inkscape">By Inkscape</mat-option>
@@ -24,7 +24,7 @@
                     </div>
                 </div>
 
-                <app-config (config)="config=$event"></app-config>
+                <app-config></app-config>
 
                 <span>
                     Points: <b>{{stats?.points|percent}}</b>,

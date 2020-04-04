@@ -96,6 +96,23 @@ void setup()
     }
   });
 
+  server.on(
+      "/api/config", HTTP_GET,
+      [](AsyncWebServerRequest *req) {
+        req->send(FS, rootPath + "/config.json");
+      });
+
+  server.on(
+      "/api/config", HTTP_POST,
+      [](AsyncWebServerRequest *request) {},
+      NULL,
+      [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+        auto file = FS.open(rootPath + "/config.json", "w");
+        file.write(data, len);
+        file.close();
+        request->send(200, "application/json", "{}");
+      });
+
   server.serveStatic("/", SPIFFS, "/client");
 
   server.onNotFound([](AsyncWebServerRequest *req) {

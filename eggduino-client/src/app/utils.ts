@@ -40,7 +40,6 @@ export function removeExtension(fileName: string) {
     return parts.slice(0, parts.length - 1).join('.');
 }
 
-
 export function blobToText(blob: Blob): Promise<string> {
     return new Promise(resolve => {
         const reader = new FileReader();
@@ -55,4 +54,9 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
         reader.onload = e => resolve(e.target.result as string);
         reader.readAsDataURL(blob);
     });
+}
+
+export function propsEqual<T>(a: T, b: T) {
+    return Object.keys(a).length === Object.keys(b).length &&
+        Object.entries(a).every(([key, value]) => b[key] === value);
 }

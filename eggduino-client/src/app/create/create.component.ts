@@ -1,10 +1,9 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { SvgSegmenter, LayerResolveType } from './services/svg-segmenter';
-import { ReplaySubject, combineLatest, Subject, BehaviorSubject, concat, of } from 'rxjs';
-import { debounceTime, switchMap, takeUntil, map, catchError, retryWhen, tap } from 'rxjs/operators';
-import { Layer, clone, removeExtension, blobToText, blobToDataUrl } from '../utils';
+import { combineLatest, Subject, concat, of } from 'rxjs';
+import { debounceTime, switchMap, takeUntil, map, retryWhen, tap, distinctUntilChanged, first } from 'rxjs/operators';
+import { Layer, clone, removeExtension, blobToText, blobToDataUrl, propsEqual } from '../utils';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Config } from './config/config.component';
 import { TransformsService } from './services/transforms';
 import { CodeConverter as CodeConverter } from '../shared/code-convert';
 import { ApiService } from '../shared/api.service';
@@ -21,22 +20,16 @@ import { ImageTracer } from './services/image-tracer';
 export class CreateComponent implements OnInit, OnDestroy {
   private file$ = new Subject<File>();
   private destroy$ = new Subject();
-  private layerResolverType$ = new BehaviorSubject<LayerResolveType>('none');
-  private config$ = new ReplaySubject<Config>(1);
   private updateLayer$ = new Subject<
     { type: 'visible', id: string, visible: boolean } |
     { type: 'description', id: string, description: string } |
     { type: 'move', from: number, to: number }
   >();
 
+  layerResolverType$ = this.apiService.config$.pipe(map(c => c.layerResolveType), distinctUntilChanged());
   visibleLayers: LayerModel[];
   layers: LayerModel[];
   stats: any;
-
-  get layerResolverType() { return this.layerResolverType$.value; }
-  set layerResolverType(value) { this.layerResolverType$.next(value); }
-
-  set config(value: Config) { this.config$.next(value); }
 
   @ViewChild('name') name: ElementRef;
 
@@ -79,7 +72,6 @@ export class CreateComponent implements OnInit, OnDestroy {
         this.name.nativeElement.innerText = removeExtension(file.name);
         return layers;
       }),
-
       retryWhen(err$ => {
         return err$.pipe(tap(err => this.presentationService.showToast(`Could not open file. ${err.message}`)));
       }),
@@ -98,7 +90,6 @@ export class CreateComponent implements OnInit, OnDestroy {
         of(models),
         this.updateLayer$.pipe(
           map(update => {
-
             switch (update.type) {
               case 'visible':
                 {
@@ -127,31 +118,37 @@ export class CreateComponent implements OnInit, OnDestroy {
         ));
     }));
 
-    combineLatest([visibleLayers$, this.config$.pipe(debounceTime(200))])
-      .pipe(
-        map(([layers, {
-          hScale, vScale, vOffset,
-          simplifySegments, simplifyThreshold,
-          optimizeTravel, reverseSegments,
-        }]) => {
-          const transformed = clone(layers);
-
-          this.transforms.scaleLayers(transformed, hScale, vScale, vOffset);
-          this.transforms.roundPoints(transformed);
-
-          if (simplifySegments) {
-            this.transforms.simplifySegments(transformed, simplifyThreshold);
-          }
-          if (optimizeTravel) {
-            this.transforms.optimizeTravel(transformed, reverseSegments);
-          }
-          this.transforms.mergeConsecutiveSegments(transformed);
-
-          const stats = this.transforms.getImprovements(layers, transformed);
-          return { layers: transformed, stats };
-        }),
-        takeUntil(this.destroy$),
+    combineLatest([
+      visibleLayers$,
+      this.apiService.config$.pipe(
+        map(c => ({ ...c, layerResolveType: undefined })),
+        distinctUntilChanged((a, b) => propsEqual(a, b)),
+        debounceTime(200)
       )
+    ]).pipe(
+      map(([layers, {
+        hScale, vScale, vOffset,
+        simplifySegments, simplifyThreshold,
+        optimizeTravel, reverseSegments,
+      }]) => {
+        const transformed = clone(layers);
+
+        this.transforms.scaleLayers(transformed, hScale, vScale, vOffset);
+        this.transforms.roundPoints(transformed);
+
+        if (simplifySegments) {
+          this.transforms.simplifySegments(transformed, simplifyThreshold);
+        }
+        if (optimizeTravel) {
+          this.transforms.optimizeTravel(transformed, reverseSegments);
+        }
+        this.transforms.mergeConsecutiveSegments(transformed);
+
+        const stats = this.transforms.getImprovements(layers, transformed);
+        return { layers: transformed, stats };
+      }),
+      takeUntil(this.destroy$),
+    )
       .subscribe(({ layers, stats }) => {
         this.visibleLayers = layers;
         this.stats = stats;
@@ -212,6 +209,14 @@ export class CreateComponent implements OnInit, OnDestroy {
       this.presentationService.showToast('Error during save. Possible duplicate filename.');
       this.name.nativeElement.focus();
     }
+  }
+
+  async updateLayerResolveType(layerResolveType: LayerResolveType) {
+    const config = await this.apiService.config$.pipe(first()).toPromise();
+    this.apiService.updateConfig({
+      ...config,
+      layerResolveType,
+    });
   }
 }
 
