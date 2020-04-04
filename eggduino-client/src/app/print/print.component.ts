@@ -5,24 +5,14 @@ import { Observable } from 'rxjs';
 import { Layer } from '../utils';
 import { CodeConverter } from '../shared/code-convert';
 import { ActivatedRoute } from '@angular/router';
-import { trigger, transition, style, animate } from '@angular/animations';
+import { collapse } from '../animations';
 
 @Component({
   selector: 'app-print',
   templateUrl: './print.component.html',
   styleUrls: ['./print.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  animations: [
-    trigger('collapse', [
-      transition(':enter', [
-        style({ height: 0 }),
-        animate('.3s ease')
-      ]),
-      transition(':leave', [
-        animate('.3s ease', style({ height: 0 })),
-      ]),
-    ]),
-  ]
+  animations: [collapse]
 })
 export class PrintComponent implements OnInit {
   private selectFileName: string;

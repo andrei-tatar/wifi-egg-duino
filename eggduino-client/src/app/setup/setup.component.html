@@ -1,9 +1,25 @@
-<mat-form-field>
-    <mat-label>Rotation motor steps</mat-label>
-    <input type="number" matInput placeholder="Number of steps">
-</mat-form-field>
+<mat-card>
+    <mat-card-content>
+        <mat-action-list>
+            <button class="list-item" [class.selected]="selected==='wifi'" mat-list-item
+                (click)="toggle('wifi')">Wi-Fi</button>
+            <div @collapse *ngIf="selected==='wifi'" class="selection-details">
+                TODO
+            </div>
 
-<mat-form-field>
-    <mat-label>Pen motor steps</mat-label>
-    <input type="number" matInput placeholder="Number of steps">
-</mat-form-field>
+            <button class="list-item" [class.selected]="selected==='motors'" mat-list-item
+                (click)="toggle('motors')">Motors</button>
+            <div @collapse *ngIf="selected==='motors'" class="selection-details">
+                <mat-form-field>
+                    <mat-label>Rotation motor steps</mat-label>
+                    <input type="number" matInput placeholder="Number of steps">
+                </mat-form-field>
+
+                <mat-form-field>
+                    <mat-label>Pen motor steps</mat-label>
+                    <input type="number" matInput placeholder="Number of steps">
+                </mat-form-field>
+            </div>
+        </mat-action-list>
+    </mat-card-content>
+</mat-card>

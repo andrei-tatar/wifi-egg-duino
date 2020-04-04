@@ -10,6 +10,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatListModule } from '@angular/material/list';
 
 import { PreviewComponent } from './preview/preview.component';
 import { ApiService } from './api.service';
@@ -22,15 +23,15 @@ import { PresentationService } from './presentation.service';
     PreviewComponent
   ],
   imports: [
-    CommonModule, HttpClientModule,
+    CommonModule, HttpClientModule, MatSnackBarModule,
     MatButtonModule, MatTabsModule, MatInputModule, MatToolbarModule, MatCardModule,
-    MatCheckboxModule, MatSelectModule, MatSliderModule, MatSnackBarModule,
+    MatCheckboxModule, MatSelectModule, MatSliderModule, MatListModule,
   ],
   exports: [
     CommonModule,
     PreviewComponent,
     MatButtonModule, MatTabsModule, MatInputModule, MatToolbarModule, MatCardModule,
-    MatCheckboxModule, MatSelectModule, MatSliderModule,
+    MatCheckboxModule, MatSelectModule, MatSliderModule, MatListModule,
   ],
 })
 export class SharedModule {

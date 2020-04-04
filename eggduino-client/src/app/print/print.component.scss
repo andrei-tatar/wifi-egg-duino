@@ -2,29 +2,6 @@
     padding: 0;
 }
 
-.list-item {
-    &:before {
-        content: "";
-        display: block;
-        border-left: 2px solid gray;
-        border-top: 2px solid gray;
-        width: 16px;
-        height: 16px;
-        position: absolute;
-        right: 20px;
-        top: calc(50% - 8px);
-        transform: rotate(-45deg);
-        transition: transform 0.3s;
-    }
-
-    &.selected {
-        background: rgba(0, 0, 0, 0.04) !important;
-
-        &:before {
-            transform: rotate(-135deg);
-        }
-    }
-}
 
 .selection-details {
     background: rgba(0, 0, 0, 0.04);

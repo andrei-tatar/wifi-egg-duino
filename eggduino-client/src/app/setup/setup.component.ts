@@ -1,16 +1,22 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { collapse } from '../animations';
 
 @Component({
   selector: 'app-setup',
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  animations: [collapse],
 })
-export class SetupComponent implements OnInit {
+export class SetupComponent {
 
-  constructor() { }
+  selected: 'wifi' | 'motors' | null = null;
 
-  ngOnInit(): void {
+  toggle(cateogry: SetupComponent['selected']) {
+    if (this.selected === cateogry) {
+      this.selected = null;
+    } else {
+      this.selected = cateogry;
+    }
   }
-
 }

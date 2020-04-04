@@ -21,3 +21,28 @@ body {
         top: 13px !important;
     }
 }
+
+.list-item {
+    &:before {
+        content: "";
+        display: block;
+        border-left: 2px solid gray;
+        border-top: 2px solid gray;
+        width: 12px;
+        height: 12px;
+        right: 14px;
+        position: absolute;
+        top: calc(50% - 6px);
+        transform: rotate(-45deg);
+        transition: transform 0.3s;
+        transform-origin: 4px 4px;
+    }
+
+    &.selected {
+        background: rgba(0, 0, 0, 0.04) !important;
+
+        &:before {
+            transform: rotate(-135deg);
+        }
+    }
+}
