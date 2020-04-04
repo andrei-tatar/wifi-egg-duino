@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 @Injectable()
 export class CodeConverter {
 
-    convertToGcode(layers: Layer[]) {
+    convertToCode(layers: Layer[]) {
         const instructions: string[] = [];
 
         for (const layer of layers) {

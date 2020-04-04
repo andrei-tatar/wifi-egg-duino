@@ -14,7 +14,6 @@ import ResizeObserver from 'resize-observer-polyfill';
   styles: [':host{display:block;height: 360px;}']
 })
 export class PreviewComponent implements OnInit, OnDestroy {
-  private readonly scaleCanvas = 1;
   private ctx: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement;
   private animationTimer: number;
@@ -44,9 +43,6 @@ export class PreviewComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const width = 500;
-    const height = 500;
-
     const mesh = this.createEggMesh();
     const camera = new PerspectiveCamera(40, 1, 0.01, 10);
     camera.position.x = -3;
@@ -71,7 +67,6 @@ export class PreviewComponent implements OnInit, OnDestroy {
     scene.add(light);
 
     const renderer = new WebGLRenderer({ antialias: true });
-    renderer.setSize(width, height);
 
     this.element.nativeElement.appendChild(renderer.domElement);
     renderer.domElement.style.outline = 'none';
@@ -108,8 +103,9 @@ export class PreviewComponent implements OnInit, OnDestroy {
 
   private createEggMesh() {
     this.canvas = document.createElement('canvas');
-    this.canvas.width = WIDTH * this.scaleCanvas;
-    this.canvas.height = HEIGHT * 2 * this.scaleCanvas;
+    // must be power of 2
+    this.canvas.width = 4096;
+    this.canvas.height = 4096;
 
     this.ctx = this.canvas.getContext('2d');
     this.ctx.fillStyle = '#CB8D66';
@@ -117,7 +113,7 @@ export class PreviewComponent implements OnInit, OnDestroy {
     this.ctx.lineWidth = 8;
     this.ctx.lineJoin = 'round';
     this.ctx.lineCap = 'round';
-    this.ctx.scale(this.scaleCanvas, this.scaleCanvas);
+    this.ctx.scale(this.canvas.width / WIDTH, this.canvas.height / (HEIGHT * 2));
     this.ctx.translate(0, HEIGHT / 2);
     this.clearDrawing();
 
@@ -190,10 +186,11 @@ export class PreviewComponent implements OnInit, OnDestroy {
   }
 
   private clearDrawing() {
-    this.ctx.fillRect(0, -HEIGHT / 2,
-      this.canvas.width / this.scaleCanvas,
-      this.canvas.height / this.scaleCanvas
-    );
+    const transform = this.ctx.getTransform();
+    this.ctx.resetTransform();
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.setTransform(transform);
+
     if (this.three?.mesh?.material) {
       (this.three.mesh.material as any).map.needsUpdate = true;
     }
@@ -217,13 +214,15 @@ export class PreviewComponent implements OnInit, OnDestroy {
 
   private getLayerColor(layer: Layer) {
     if (layer.description) {
-      if (this.isColor(layer.description)) {
-        return layer.description;
+      let color = layer.description.toLowerCase();
+      if (this.isColor(color)) {
+        return color;
       }
 
       for (const [match] of allMatches(layer.description, /\w+/gi)) {
-        if (this.isColor(match)) {
-          return match;
+        color = match.toLowerCase();
+        if (this.isColor(color)) {
+          return color;
         }
       }
     }

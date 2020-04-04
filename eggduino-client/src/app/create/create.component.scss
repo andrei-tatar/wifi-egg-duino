@@ -57,8 +57,10 @@ mat-card-title {
     box-sizing: border-box;
     cursor: move;
     background: white;
+    padding: 0px 10px;
+
     input {
-        padding: 20px 10px;
+        padding: 20px 0;
         font-size: 14px;
         border: none;
     }

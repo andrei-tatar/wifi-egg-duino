@@ -19,6 +19,8 @@
                 <div *ngIf="layers?.length>1" cdkDropList class="layer-list" (cdkDropListDropped)="moveLayer($event)">
                     <div class="layer-item" *ngFor="let layer of layers trackBy trackLayer" cdkDrag>
                         <input [value]="layer.description" (input)="updateLayerDescription(layer, $event.target.value)">
+                        <mat-checkbox [checked]="layer.visible" (change)="toggleVisibility(layer)">
+                        </mat-checkbox>
                     </div>
                 </div>
 
@@ -30,7 +32,7 @@
                     Seg: <b>{{stats?.segments|percent}}</b>
                 </span>
             </div>
-            <app-preview [layers]="layers"></app-preview>
+            <app-preview [layers]="visibleLayers"></app-preview>
         </mat-card-content>
         <mat-card-actions>
             <button mat-raised-button color="primary" [disabled]="!name.innerText" (click)="save()">Save and go to

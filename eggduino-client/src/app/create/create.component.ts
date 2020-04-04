@@ -19,12 +19,13 @@ export class CreateComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject();
   private layerResolverType$ = new BehaviorSubject<LayerResolveType>('none');
   private config$ = new ReplaySubject<Config>(1);
-  private moveLayers$ = new Subject<{ from: number, to: number }>();
   private updateLayer$ = new Subject<
     { type: 'visible', id: string, visible: boolean } |
-    { type: 'description', id: string, description: string }
+    { type: 'description', id: string, description: string } |
+    { type: 'move', from: number, to: number }
   >();
 
+  visibleLayers: LayerModel[];
   layers: LayerModel[];
   stats: any;
 
@@ -52,46 +53,57 @@ export class CreateComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    const layers$ = combineLatest([this.file$, this.layerResolverType$])
-      .pipe(
-        debounceTime(200),
-        switchMap(([file, resolveType]) => this.svg.segment(file, resolveType)),
-      );
+    const allLayers$ = combineLatest([
+      this.file$,
+      this.layerResolverType$.pipe(debounceTime(200))
+    ]).pipe(
+      switchMap(([file, resolveType]) => this.svg.segment(file, resolveType)),
+    );
 
-    const layersUpdated$ = layers$.pipe(switchMap(layers => {
+    const visibleLayers$ = allLayers$.pipe(switchMap(layers => {
       const models: LayerModel[] = layers.map(layer => ({
         ...layer,
         description: layer.id ?? '< No Name >',
         visible: true,
       }));
 
-      return concat(of(models), this.updateLayer$.pipe(
-        map(update => {
-          const index = models.findIndex(l => l.id === update.id);
-          if (index >= 0) {
+      this.layers = models;
+
+      return concat(
+        of(models),
+        this.updateLayer$.pipe(
+          map(update => {
+
             switch (update.type) {
               case 'visible':
-                models[index].visible = update.visible;
+                {
+                  const index = models.findIndex(l => l.id === update.id);
+                  if (index >= 0) {
+                    models[index].visible = update.visible;
+                  }
+                }
                 break;
               case 'description':
-                models[index].description = update.description;
+                {
+                  const index = models.findIndex(l => l.id === update.id);
+                  if (index >= 0) {
+                    models[index].description = update.description;
+                  }
+                }
+                break;
+              case 'move':
+                moveItemInArray(models, update.from, update.to);
                 break;
             }
-          }
-          return models;
-        })
-      ));
+            this.layers = models.slice();
+
+            return models.filter(l => l.visible);
+          })
+        ));
     }));
 
-    const layersOrdered$ = layersUpdated$.pipe(switchMap(layers => concat(of(layers), this.moveLayers$.pipe(
-      map(move => {
-        moveItemInArray(layers, move.from, move.to);
-        return layers;
-      })
-    ))));
-    combineLatest([layersOrdered$, this.config$])
+    combineLatest([visibleLayers$, this.config$.pipe(debounceTime(200))])
       .pipe(
-        debounceTime(200),
         map(([layers, {
           hScale, vScale, vOffset,
           simplifySegments, simplifyThreshold,
@@ -116,7 +128,7 @@ export class CreateComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
       )
       .subscribe(({ layers, stats }) => {
-        this.layers = layers;
+        this.visibleLayers = layers;
         this.stats = stats;
       });
   }
@@ -127,17 +139,14 @@ export class CreateComponent implements OnInit, OnDestroy {
   }
 
   moveLayer(event: CdkDragDrop<string[]>) {
-    // this is only to update the UI immediately
-    moveItemInArray(this.layers, event.previousIndex, event.currentIndex);
-
-    this.moveLayers$.next({
+    this.updateLayer$.next({
+      type: 'move',
       from: event.previousIndex,
       to: event.currentIndex,
     });
   }
 
   updateLayerDescription(layer: LayerModel, description: string) {
-    layer.description = description;
     this.updateLayer$.next({
       type: 'description',
       id: layer.id,
@@ -146,11 +155,10 @@ export class CreateComponent implements OnInit, OnDestroy {
   }
 
   toggleVisibility(layer: LayerModel) {
-    layer.visible = !layer.visible;
     this.updateLayer$.next({
       type: 'visible',
       id: layer.id,
-      visible: layer.visible,
+      visible: !layer.visible,
     });
   }
 
@@ -159,7 +167,7 @@ export class CreateComponent implements OnInit, OnDestroy {
   }
 
   async save() {
-    const code = this.codeConverter.convertToGcode(this.layers);
+    const code = this.codeConverter.convertToCode(this.visibleLayers);
     await this.apiService.uploadFile(this.name.nativeElement.innerText, code).toPromise();
   }
 }
