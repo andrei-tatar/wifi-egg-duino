@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectionStr
 import { SvgSegmenter, LayerResolveType } from './services/svg-segmenter';
 import { ReplaySubject, combineLatest, Subject, BehaviorSubject, concat, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, map, catchError, retryWhen, tap } from 'rxjs/operators';
-import { Layer, clone } from '../utils';
+import { Layer, clone, removeExtension, blobToText, blobToDataUrl } from '../utils';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Config } from './config/config.component';
 import { TransformsService } from './services/transforms';
@@ -10,6 +10,7 @@ import { CodeConverter as CodeConverter } from '../shared/code-convert';
 import { ApiService } from '../shared/api.service';
 import { PresentationService } from '../shared/presentation.service';
 import { Router } from '@angular/router';
+import { ImageTracer } from './services/image-tracer';
 
 @Component({
   selector: 'app-create',
@@ -53,6 +54,7 @@ export class CreateComponent implements OnInit, OnDestroy {
   async uploadedFiles(files: FileList) {
     const file = files[0];
     if (!file) { return; }
+
     this.file$.next(file);
   }
 
@@ -62,13 +64,24 @@ export class CreateComponent implements OnInit, OnDestroy {
       this.layerResolverType$.pipe(debounceTime(200))
     ]).pipe(
       switchMap(async ([file, resolveType]) => {
-        const layers = await this.svg.segment(file, resolveType);
-        const parts = file.name.split('.');
-        this.name.nativeElement.innerText = parts.slice(0, parts.length - 1).join('.');
+        let svgText: string;
+        if (file.type === 'image/svg+xml') {
+          svgText = await blobToText(file);
+        } else {
+          const dataUrl = await blobToDataUrl(file);
+          svgText = await new Promise(resolve => {
+            const tracer = new ImageTracer();
+            tracer.imageToSVG(dataUrl, svgstr => resolve(svgstr), 'posterized3');
+          });
+        }
+
+        const layers = this.svg.segment(svgText, resolveType);
+        this.name.nativeElement.innerText = removeExtension(file.name);
         return layers;
       }),
+
       retryWhen(err$ => {
-        return err$.pipe(tap(_ => this.presentationService.showToast('Could not open file')));
+        return err$.pipe(tap(err => this.presentationService.showToast(`Could not open file. ${err.message}`)));
       }),
     );
 

@@ -27,10 +27,32 @@ export function clone<T>(obj: T): T {
     return JSON.parse(JSON.stringify(obj));
 }
 
-export function * allMatches(input: string, regexp: RegExp) {
+export function* allMatches(input: string, regexp: RegExp) {
     let match: RegExpExecArray;
     do {
         match = regexp.exec(input);
         if (match) { yield match; }
     } while (match);
+}
+
+export function removeExtension(fileName: string) {
+    const parts = fileName.split('.');
+    return parts.slice(0, parts.length - 1).join('.');
+}
+
+
+export function blobToText(blob: Blob): Promise<string> {
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result as string);
+        reader.readAsText(blob);
+    });
+}
+
+export function blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result as string);
+        reader.readAsDataURL(blob);
+    });
 }

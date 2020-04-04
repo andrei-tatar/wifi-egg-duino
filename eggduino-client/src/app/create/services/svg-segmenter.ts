@@ -12,12 +12,12 @@ export class SvgSegmenter {
     ) {
     }
 
-    async segment(blob: Blob, resolveLayer: LayerResolveType): Promise<Layer[]> {
-        const svg = await this.loadSvg(blob);
+    segment(svgText: string, resolveLayer: LayerResolveType): Layer[] {
+        const svg = this.loadSvg(svgText);
         let resolver: LayerIdResolver;
         switch (resolveLayer) {
             case 'color':
-                resolver = e => e.style.stroke || null;
+                resolver = e => e.style.stroke || e.attributes.getNamedItem('stroke').value || null;
                 break;
             case 'inkscape':
                 resolver = e => e.attributes.getNamedItem('inkscape:groupmode')?.value === 'layer'
@@ -43,22 +43,13 @@ export class SvgSegmenter {
         });
     }
 
-    private async loadSvg(blob: Blob): Promise<SVGSVGElement> {
-        const svgText = await this.blobToText(blob);
+    private loadSvg(svg: string): SVGSVGElement {
         const parser = new DOMParser();
-        const parsed = parser.parseFromString(svgText, 'image/svg+xml');
+        const parsed = parser.parseFromString(svg, 'image/svg+xml');
         if (!(parsed.documentElement instanceof SVGSVGElement)) {
             throw new Error('invalid SVG doc');
         }
         return parsed.documentElement;
-    }
-
-    private blobToText(blob: Blob): Promise<string> {
-        return new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onload = e => resolve(e.target.result as string);
-            reader.readAsText(blob);
-        });
     }
 
     private traverseSvg(
