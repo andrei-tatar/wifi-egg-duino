@@ -9,7 +9,7 @@ export class ApiService {
     }
 
     getFiles() {
-        return this.client.get<IFile[]>('api/files');
+        return this.client.get<PrintFile[]>('api/files');
     }
 
     uploadFile(name: string, content: string) {
@@ -27,6 +27,6 @@ export class ApiService {
     }
 }
 
-export interface IFile {
+export interface PrintFile {
     name: string;
 }

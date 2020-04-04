@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, ElementRef, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, ElementRef, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import {
   Scene, Vector2, LatheBufferGeometry, Mesh, WebGLRenderer, Texture, MathUtils, GridHelper,
@@ -11,7 +11,8 @@ import ResizeObserver from 'resize-observer-polyfill';
 @Component({
   selector: 'app-preview',
   template: '',
-  styles: [':host{display:block;height: 360px;}']
+  styles: [':host{display:block;height: 360px;}'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PreviewComponent implements OnInit, OnDestroy {
   private ctx: CanvasRenderingContext2D;

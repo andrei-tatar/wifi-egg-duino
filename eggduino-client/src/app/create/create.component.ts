@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { SvgSegmenter, LayerResolveType } from './services/svg-segmenter';
 import { ReplaySubject, combineLatest, Subject, BehaviorSubject, concat, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, map } from 'rxjs/operators';
@@ -12,7 +12,8 @@ import { ApiService } from '../shared/api.service';
 @Component({
   selector: 'app-create',
   templateUrl: './create.component.html',
-  styleUrls: ['./create.component.scss']
+  styleUrls: ['./create.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreateComponent implements OnInit, OnDestroy {
   private file$ = new ReplaySubject<File>(1);
@@ -41,6 +42,7 @@ export class CreateComponent implements OnInit, OnDestroy {
     private transforms: TransformsService,
     private codeConverter: CodeConverter,
     private apiService: ApiService,
+    private cdr: ChangeDetectorRef,
   ) {
   }
 
@@ -130,6 +132,7 @@ export class CreateComponent implements OnInit, OnDestroy {
       .subscribe(({ layers, stats }) => {
         this.visibleLayers = layers;
         this.stats = stats;
+        this.cdr.markForCheck();
       });
   }
 
