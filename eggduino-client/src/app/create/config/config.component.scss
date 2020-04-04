@@ -1,0 +1,22 @@
+:host {
+    display: flex;
+    flex-direction: column;
+}
+
+.mat-checkbox {
+    margin-bottom: 8px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1.2fr 2fr .7fr;
+
+    > mat-label {
+        align-self: center;
+    }
+}
+
+mb {
+    margin-bottom: 10px;
+}
+

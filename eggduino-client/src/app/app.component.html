@@ -1,0 +1,11 @@
+<mat-toolbar color="primary">
+    <mat-toolbar-row>
+        <a mat-button href="https://github.com/andrei-tatar" target="_blank">WiFi Egg Bot</a>
+        <a mat-button [routerLink]="'print'" routerLinkActive="mat-accent">Print</a>
+        <a mat-button [routerLink]="'create'" routerLinkActive="mat-accent">Create</a>
+        <a mat-button [routerLink]="'setup'" routerLinkActive="mat-accent">Setup</a>
+    </mat-toolbar-row>
+</mat-toolbar>
+<div class="container">
+    <router-outlet></router-outlet>
+</div>

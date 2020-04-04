@@ -1,0 +1,23 @@
+/* You can add global styles to this file, and also import other style files */
+
+html,
+body {
+    height: 100%;
+    background-color: #eee;
+}
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.mat-button-base {
+    text-transform: uppercase;
+}
+
+.mat-slider-horizontal {
+    height: 32px !important;
+
+    .mat-slider-wrapper {
+        top: 13px !important;
+    }
+}

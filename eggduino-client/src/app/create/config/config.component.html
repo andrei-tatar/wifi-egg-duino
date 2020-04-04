@@ -1,0 +1,38 @@
+<mat-checkbox class="mb" [checked]="simplify" (change)="simplify=$event.checked">
+    Simplify segments
+</mat-checkbox>
+
+<mat-checkbox class="mb" [checked]="optimizeTravel" (change)="optimizeTravel=$event.checked">
+    Optimize travel distances
+</mat-checkbox>
+
+<mat-checkbox *ngIf="optimizeTravel" class="mb" [checked]="reverseSegments" (change)="reverseSegments=$event.checked">
+    Reverse segments
+</mat-checkbox>
+
+<div class="grid-container">
+    <ng-container *ngIf="simplify">
+        <mat-label>Simplify thld.</mat-label>
+        <mat-slider thumbLabel min=".1" max="5" step=".1" [value]="simplifyThreshold"
+            (input)="simplifyThreshold=$event.value">
+        </mat-slider>
+        <input matInput type="number" [value]="simplifyThreshold" (input)="simplifyThreshold=+$event.target.value"
+            min=".1" max="5" step=".1">
+    </ng-container>
+
+    <mat-label>Hor. scale</mat-label>
+    <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="hScale" (input)="hScale=$event.value">
+    </mat-slider>
+    <input matInput type="number" [value]="hScale" (input)="hScale=+$event.target.value" min=".001" max="3" step=".001">
+
+    <mat-label>Ver. scale</mat-label>
+    <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="vScale" (input)="vScale=$event.value">
+    </mat-slider>
+    <input matInput type="number" [value]="vScale" (input)="vScale=+$event.target.value" min=".001" max="3" step=".001">
+
+    <mat-label>Ver. offset</mat-label>
+    <mat-slider thumbLabel min="-400" max="400" step="1" [value]="vOffset" (input)="vOffset=$event.value">
+    </mat-slider>
+    <input matInput type="number" [value]="vOffset" (input)="vOffset=+$event.target.value" min="-400" max="400"
+        step="1">
+</div>

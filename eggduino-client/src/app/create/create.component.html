@@ -1,0 +1,41 @@
+<input class="upload-file-input" type="file" #upload (change)="uploadedFiles($event.target.files)">
+
+<ng-container>
+    <mat-card>
+        <mat-card-title>
+            <div #name contenteditable="true"></div>
+            <button mat-raised-button class="upload-file" color="primary" (click)="upload.click()">Select file</button>
+        </mat-card-title>
+        <mat-card-content class="content-container">
+            <div class="options-container">
+                <mat-form-field>
+                    <mat-label>Layers</mat-label>
+                    <mat-select [(value)]="layerResolverType">
+                        <mat-option value="none">None</mat-option>
+                        <mat-option value="color">By Color</mat-option>
+                        <mat-option value="inkscape">By Inkscape</mat-option>
+                    </mat-select>
+                </mat-form-field>
+                <div *ngIf="layers?.length>1" cdkDropList class="layer-list" (cdkDropListDropped)="moveLayer($event)">
+                    <div class="layer-item" *ngFor="let layer of layers trackBy trackLayer" cdkDrag>
+                        <input [value]="layer.description" (input)="updateLayerDescription(layer, $event.target.value)">
+                    </div>
+                </div>
+
+                <app-config (config)="config=$event"></app-config>
+
+                <span>
+                    Points: <b>{{stats?.points|percent}}</b>,
+                    Travel: <b>{{stats?.travel|percent}}</b>,
+                    Seg: <b>{{stats?.segments|percent}}</b>
+                </span>
+            </div>
+            <app-preview [layers]="layers"></app-preview>
+        </mat-card-content>
+        <mat-card-actions>
+            <button mat-raised-button color="primary" [disabled]="!name.innerText" (click)="save()">Save and go to
+                print</button>
+            <button mat-button [disabled]="!name.innerText">Save</button>
+        </mat-card-actions>
+    </mat-card>
+</ng-container>

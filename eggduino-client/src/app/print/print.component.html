@@ -1,0 +1,10 @@
+<mat-card>
+    <mat-card-title>
+        Files
+    </mat-card-title>
+    <mat-card-content>
+        <mat-action-list>
+            <button mat-list-item *ngFor="let file of files$|async">{{file.name}}</button>
+        </mat-action-list>
+    </mat-card-content>
+</mat-card>
