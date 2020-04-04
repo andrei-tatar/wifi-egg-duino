@@ -87,9 +87,11 @@ export class PreviewComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.stopAnimation();
-    this.three.controls.dispose();
-    this.three.renderer.dispose();
-    this.three.scene.dispose();
+    setTimeout(() => {
+      this.three.controls.dispose();
+      this.three.renderer.dispose();
+      this.three.scene.dispose();
+    }, 300);
   }
 
   private createEggGeometry() {

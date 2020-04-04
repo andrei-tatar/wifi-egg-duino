@@ -1,13 +1,15 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { SvgSegmenter, LayerResolveType } from './services/svg-segmenter';
 import { ReplaySubject, combineLatest, Subject, BehaviorSubject, concat, of } from 'rxjs';
-import { debounceTime, switchMap, takeUntil, map } from 'rxjs/operators';
+import { debounceTime, switchMap, takeUntil, map, catchError, retryWhen, tap } from 'rxjs/operators';
 import { Layer, clone } from '../utils';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Config } from './config/config.component';
 import { TransformsService } from './services/transforms';
 import { CodeConverter as CodeConverter } from '../shared/code-convert';
 import { ApiService } from '../shared/api.service';
+import { PresentationService } from '../shared/presentation.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-create',
@@ -16,7 +18,7 @@ import { ApiService } from '../shared/api.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreateComponent implements OnInit, OnDestroy {
-  private file$ = new ReplaySubject<File>(1);
+  private file$ = new Subject<File>();
   private destroy$ = new Subject();
   private layerResolverType$ = new BehaviorSubject<LayerResolveType>('none');
   private config$ = new ReplaySubject<Config>(1);
@@ -43,14 +45,14 @@ export class CreateComponent implements OnInit, OnDestroy {
     private codeConverter: CodeConverter,
     private apiService: ApiService,
     private cdr: ChangeDetectorRef,
+    private presentationService: PresentationService,
+    private router: Router,
   ) {
   }
 
   async uploadedFiles(files: FileList) {
     const file = files[0];
     if (!file) { return; }
-    const parts = file.name.split('.');
-    this.name.nativeElement.innerText = parts.slice(0, parts.length - 1).join('.');
     this.file$.next(file);
   }
 
@@ -59,7 +61,15 @@ export class CreateComponent implements OnInit, OnDestroy {
       this.file$,
       this.layerResolverType$.pipe(debounceTime(200))
     ]).pipe(
-      switchMap(([file, resolveType]) => this.svg.segment(file, resolveType)),
+      switchMap(async ([file, resolveType]) => {
+        const layers = await this.svg.segment(file, resolveType);
+        const parts = file.name.split('.');
+        this.name.nativeElement.innerText = parts.slice(0, parts.length - 1).join('.');
+        return layers;
+      }),
+      retryWhen(err$ => {
+        return err$.pipe(tap(_ => this.presentationService.showToast('Could not open file')));
+      }),
     );
 
     const visibleLayers$ = allLayers$.pipe(switchMap(layers => {
@@ -169,9 +179,26 @@ export class CreateComponent implements OnInit, OnDestroy {
     return layer.id;
   }
 
-  async save() {
-    const code = this.codeConverter.convertToCode(this.visibleLayers);
-    await this.apiService.uploadFile(this.name.nativeElement.innerText, code).toPromise();
+  async save(redirect = true) {
+    try {
+      const code = this.codeConverter.layersToCode(this.visibleLayers);
+      const name = this.name.nativeElement.innerText;
+
+      await this.apiService.uploadFile(name, code).toPromise();
+
+      this.presentationService.showToast('Saved OK');
+
+      if (redirect) {
+        this.router.navigate(['print'], {
+          queryParams: {
+            select: name,
+          }
+        });
+      }
+    } catch (error) {
+      this.presentationService.showToast('Error during save. Possible duplicate filename.');
+      this.name.nativeElement.focus();
+    }
   }
 }
 

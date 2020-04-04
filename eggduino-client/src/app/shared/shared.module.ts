@@ -9,11 +9,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { PreviewComponent } from './preview/preview.component';
 import { ApiService } from './api.service';
 import { CodeConverter } from './code-convert';
 import { HttpClientModule } from '@angular/common/http';
+import { PresentationService } from './presentation.service';
 
 @NgModule({
   declarations: [
@@ -22,7 +24,7 @@ import { HttpClientModule } from '@angular/common/http';
   imports: [
     CommonModule, HttpClientModule,
     MatButtonModule, MatTabsModule, MatInputModule, MatToolbarModule, MatCardModule,
-    MatCheckboxModule, MatSelectModule, MatSliderModule,
+    MatCheckboxModule, MatSelectModule, MatSliderModule, MatSnackBarModule,
   ],
   exports: [
     CommonModule,
@@ -37,6 +39,7 @@ export class SharedModule {
       ngModule: SharedModule,
       providers: [
         ApiService, CodeConverter,
+        PresentationService,
       ],
     };
   }

@@ -1,10 +1,19 @@
 <mat-card>
-    <mat-card-title>
-        Files
-    </mat-card-title>
     <mat-card-content>
         <mat-action-list>
-            <button mat-list-item *ngFor="let file of files$|async">{{file.name}}</button>
+            <div mat-subheader>Files</div>
+            <ng-container *ngFor="let file of files$|async">
+                <button class="list-item" [class.selected]="selected===file" mat-list-item
+                    (click)="selectFile(file)">{{file.name}}</button>
+                <div @collapse *ngIf="selected===file" class="selection-details">
+                    <app-preview [layers]="file.layers$|async">
+                    </app-preview>
+                    <div class="actions">
+                        <button mat-raised-button color="primary" (click)="printSelectedFile()">Print</button>
+                        <button mat-raised-button (click)="deleteFile(file)">Delete</button>
+                    </div>
+                </div>
+            </ng-container>
         </mat-action-list>
     </mat-card-content>
 </mat-card>

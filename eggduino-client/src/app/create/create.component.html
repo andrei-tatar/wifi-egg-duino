@@ -37,7 +37,7 @@
         <mat-card-actions>
             <button mat-raised-button color="primary" [disabled]="!name.innerText" (click)="save()">Save and go to
                 print</button>
-            <button mat-button [disabled]="!name.innerText">Save</button>
+            <button mat-button [disabled]="!name.innerText" (click)="save(false)">Save</button>
         </mat-card-actions>
     </mat-card>
 </ng-container>
