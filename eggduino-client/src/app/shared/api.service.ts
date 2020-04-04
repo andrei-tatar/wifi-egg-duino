@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {
-    ignoreElements, switchMap, publishReplay, refCount, scan, catchError,
+    ignoreElements, switchMap, scan, catchError,
     shareReplay, distinctUntilChanged, skip, map, debounce
 } from 'rxjs/operators';
 import { Subject, concat, defer, EMPTY, of, merge, timer } from 'rxjs';
@@ -60,8 +60,7 @@ export class ApiService {
                 }, files)
             ))
         ),
-        publishReplay(1),
-        refCount(),
+        shareReplay(1),
     );
 
     constructor(
