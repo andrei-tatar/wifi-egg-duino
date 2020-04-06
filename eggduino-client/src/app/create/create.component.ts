@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectionStr
 import { SvgSegmenter, LayerResolveType } from './services/svg-segmenter';
 import { combineLatest, Subject, concat, of } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, map, retryWhen, tap, distinctUntilChanged, first } from 'rxjs/operators';
-import { Layer, clone, removeExtension, blobToText, blobToDataUrl, propsEqual } from '../utils';
+import { Layer, clone, removeExtension, blobToText, blobToDataUrl, propsEqual, STEPS_PER_REV } from '../utils';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { TransformsService } from './services/transforms';
 import { CodeConverter as CodeConverter } from '../shared/code-convert';
@@ -68,13 +68,16 @@ export class CreateComponent implements OnInit, OnDestroy {
           });
         }
 
-        const layers = this.svg.segment(svgText, resolveType);
+        const { layers, width, height } = this.svg.segment(svgText, resolveType);
+        const scale = Math.min(STEPS_PER_REV / width, STEPS_PER_REV / 2 / height);
+        this.transforms.scaleLayers(layers, scale, scale, -height * scale / 2, false);
         this.name.nativeElement.innerText = removeExtension(file.name);
         return layers;
       }),
-      retryWhen(err$ => {
-        return err$.pipe(tap(err => this.presentationService.showToast(`Could not open file. ${err.message}`)));
-      }),
+      retryWhen(err$ => err$.pipe(tap(err => {
+        this.presentationService.showToast(`Could not open file. ${err.message}`);
+        console.error(err);
+      }))),
     );
 
     const visibleLayers$ = allLayers$.pipe(switchMap(layers => {

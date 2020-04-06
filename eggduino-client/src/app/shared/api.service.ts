@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import {
     ignoreElements, switchMap, scan, catchError,
     shareReplay, distinctUntilChanged, skip, map, debounce
@@ -63,16 +63,18 @@ export class ApiService {
         shareReplay(1),
     );
 
+    readonly motionParams$ = this.client.get<MotionParams>('api/motion');
+
     constructor(
         private client: HttpClient
     ) {
     }
 
     uploadFile(name: string, content: string) {
-        const formData: FormData = new FormData();
-        formData.append('data', new Blob([content], { type: 'text/plain' }), name);
+        const params: FormData = new FormData();
+        params.append('data', new Blob([content], { type: 'text/plain' }), name);
         return concat(
-            this.client.post('api/file', formData),
+            this.client.post('api/file', params),
             defer(() => {
                 this.events$.next({ type: 'create', name });
             }),
@@ -97,13 +99,52 @@ export class ApiService {
         ).pipe(ignoreElements());
     }
 
+    printFile(name: string) {
+        return this.client.post('api/print/' + name, '', { responseType: 'text' });
+    }
+
+
     updateConfig(config: Config) {
         this.updateConfig$.next(config);
     }
+
+    sendCommand(cmd: MotionCommand) {
+        return this.client.post(
+            'api/command',
+            `command=${cmd}`,
+            {
+                headers: new HttpHeaders().append('Content-Type', 'application/x-www-form-urlencoded'),
+            }
+        ).pipe(ignoreElements());
+    }
+
+    updateMotionParams(params: MotionParams) {
+        const url = new URLSearchParams();
+        for (const [key, value] of Object.entries(params)) {
+            url.append(key, `${value}`);
+        }
+        return this.client.patch('api/motion', url.toString(), {
+            responseType: 'text',
+            headers: new HttpHeaders().append('Content-Type', 'application/x-www-form-urlencoded'),
+        }).pipe(ignoreElements());
+    }
 }
+
+export type MotionCommand = 'pen-up' | 'pen-down' | 'motors-enable' | 'motors-disable';
 
 export interface PrintFile {
     name: string;
+}
+
+export interface MotionParams {
+    penUpPercent: number;
+    penDownPercent: number;
+    drawingSpeed: number;
+    penMoveDelay: number;
+    travelSpeed: number;
+    stepsPerRotation: number;
+    reversePen: boolean;
+    reverseRotation: boolean;
 }
 
 export interface Config {

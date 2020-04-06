@@ -1,128 +1,54 @@
 #include <Arduino.h>
 #include <M5Stack.h>
-#include "Free_Fonts.h"
-#include <ESPAsyncWebServer.h>
+#include <WiFi.h>
 
-AsyncWebServer server(80);
-const String rootPath = "/eggbot";
-const String extension = ".egg";
-fs::File uploadFile;
-#define FS SD
+#include "web.h"
+#include "motion.h"
+#include "printer.h"
+#include "Free_Fonts.h"
+
+Web web(SD);
+Motion motion;
+Printer printer(motion);
 
 void setup()
 {
   WiFi.begin();
-
   M5.begin();
-  M5.Lcd.setBrightness(0);
+  M5.Lcd.setFreeFont(FSS12);
+  M5.Lcd.println();
 
-  SPIFFS.begin();
-
-  FS.begin();
-  FS.mkdir(rootPath);
-
-  server.on("/api/files", HTTP_GET, [](AsyncWebServerRequest *req) {
-    File dir = FS.open(rootPath);
-    if (!dir || !dir.isDirectory())
-    {
-      req->send(500, "text/json", "{\"error\":\"no_card\"}");
-      return;
-    }
-
-    String output = "[";
-    auto skip = rootPath.length() + 1;
-    while (File file = dir.openNextFile())
-    {
-      auto fileName = String(file.name());
-
-      if (!fileName.endsWith(extension))
-        continue;
-
-      if (output != "[")
-      {
-        output += ',';
-      }
-      output += "{\"name\":\"";
-      output += fileName.substring(skip, fileName.length() - extension.length());
-      output += "\"}";
-    }
-    output += "]";
-    req->send(200, "text/json", output);
+  printer.onPause([](String waitFor) {
+    M5.Lcd.clear();
+    M5.Lcd.println("Waiting for");
+    M5.Lcd.println(waitFor);
+    M5.Speaker.beep();
   });
 
-  server.on(
-      "/api/file", HTTP_POST,
-      [](AsyncWebServerRequest *req) {
-        if (req->_tempFile)
-        {
-          req->_tempFile.close();
-          req->send(201);
-        }
-        else
-        {
-          req->send(400);
-        }
-      },
-      [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-        if (!index)
-        {
-          String path = rootPath + "/" + filename + extension;
-          if (!FS.exists(path))
-          {
-            auto file = FS.open(path, "w");
-            request->_tempFile = file;
-          }
-        }
-        if (len && request->_tempFile)
-        {
-          request->_tempFile.write(data, len);
-        }
-      });
-
-  server.on("/api/file/*", HTTP_GET | HTTP_DELETE, [](AsyncWebServerRequest *req) {
-    String path = rootPath + "/" + req->url().substring(10) + extension;
-    if (req->method() == HTTP_GET)
-    {
-      req->send(FS, path);
-    }
-    else
-    {
-      if (!FS.exists(path))
-      {
-        return req->send(404);
-      }
-      FS.remove(path);
-      req->send(200);
-    }
+  printer.onProgress([](uint8_t percentage) {
+    M5.Lcd.progressBar(0, 0, M5.Lcd.width(), 10, percentage);
   });
 
-  server.on(
-      "/api/config", HTTP_GET,
-      [](AsyncWebServerRequest *req) {
-        req->send(FS, rootPath + "/config.json");
-      });
+  motion.begin();
+  web.begin(motion, printer);
 
-  server.on(
-      "/api/config", HTTP_POST,
-      [](AsyncWebServerRequest *request) {},
-      NULL,
-      [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-        auto file = FS.open(rootPath + "/config.json", "w");
-        file.write(data, len);
-        file.close();
-        request->send(200, "application/json", "{}");
-      });
-
-  server.serveStatic("/", SPIFFS, "/client");
-
-  server.onNotFound([](AsyncWebServerRequest *req) {
-    req->send(SPIFFS, "/client/index.html");
-  });
-
-  server.begin();
+  uint8_t count = 0;
+  while (WiFi.status() != WL_CONNECTED && count < 30)
+  {
+    M5.Lcd.print(".");
+    delay(500);
+    count++;
+  }
+  M5.Lcd.println(WiFi.localIP());
 }
 
 void loop()
 {
   M5.update();
+  printer.update();
+
+  if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed())
+  {
+    printer.continuePrint();
+  }
 }

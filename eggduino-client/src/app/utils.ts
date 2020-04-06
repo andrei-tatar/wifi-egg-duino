@@ -1,6 +1,5 @@
-export const WIDTH = 3200;
-export const HEIGHT = 800;
-export const HOME: Point = { x: 0, y: HEIGHT / 2 };
+export const STEPS_PER_REV = 6400;
+export const HOME: Point = { x: 0, y: 0 };
 
 export const DEFAULT_LAYER_COLORS = [
     'darkred', 'darkblue', 'darkgreen', 'darkyellow', 'darkorange',
@@ -59,4 +58,8 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
 export function propsEqual<T>(a: T, b: T) {
     return Object.keys(a).length === Object.keys(b).length &&
         Object.entries(a).every(([key, value]) => b[key] === value);
+}
+
+export function distanceBetweenPoints(p1: Point, p2: Point) {
+    return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
 }

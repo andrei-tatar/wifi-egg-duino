@@ -5,7 +5,7 @@ import {
   PerspectiveCamera, AmbientLight, DirectionalLight, MeshStandardMaterial, TextureLoader, Color
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { WIDTH, HEIGHT, DEFAULT_LAYER_COLORS, Layer, allMatches } from 'src/app/utils';
+import { STEPS_PER_REV, DEFAULT_LAYER_COLORS, Layer, allMatches } from 'src/app/utils';
 import ResizeObserver from 'resize-observer-polyfill';
 
 @Component({
@@ -113,11 +113,11 @@ export class PreviewComponent implements OnInit, OnDestroy {
     this.ctx = this.canvas.getContext('2d');
     this.ctx.fillStyle = '#CB8D66';
     this.ctx.strokeStyle = 'darkred';
-    this.ctx.lineWidth = 8;
+    this.ctx.lineWidth = STEPS_PER_REV / 400;
     this.ctx.lineJoin = 'round';
     this.ctx.lineCap = 'round';
-    this.ctx.scale(this.canvas.width / WIDTH, this.canvas.height / (HEIGHT * 2));
-    this.ctx.translate(0, HEIGHT / 2);
+    this.ctx.translate(0, this.canvas.height / 2);
+    this.ctx.scale(this.canvas.width / STEPS_PER_REV, this.canvas.height / (STEPS_PER_REV / 2));
     this.clearDrawing();
 
     const texture = new Texture(this.canvas);
@@ -163,13 +163,13 @@ export class PreviewComponent implements OnInit, OnDestroy {
           let goBack = false;
           if (from.x < 0 || to.x < 0) {
             goBack = true;
-            this.ctx.moveTo(from.x + WIDTH, from.y);
-            this.ctx.lineTo(to.x + WIDTH, to.y);
+            this.ctx.moveTo(from.x + STEPS_PER_REV, from.y);
+            this.ctx.lineTo(to.x + STEPS_PER_REV, to.y);
           }
-          if (from.x >= WIDTH || to.x >= WIDTH) {
+          if (from.x >= STEPS_PER_REV || to.x >= STEPS_PER_REV) {
             goBack = true;
-            this.ctx.moveTo(from.x - WIDTH, from.y);
-            this.ctx.lineTo(to.x - WIDTH, to.y);
+            this.ctx.moveTo(from.x - STEPS_PER_REV, from.y);
+            this.ctx.lineTo(to.x - STEPS_PER_REV, to.y);
           }
 
           if (goBack) {

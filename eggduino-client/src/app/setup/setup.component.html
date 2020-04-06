@@ -3,22 +3,67 @@
         <mat-action-list>
             <button class="list-item" [class.selected]="selected==='wifi'" mat-list-item
                 (click)="toggle('wifi')">Wi-Fi</button>
-            <div @collapse *ngIf="selected==='wifi'" class="selection-details">
+            <div @collapse *ngIf="selected==='wifi'" class="expanded">
                 TODO
             </div>
 
-            <button class="list-item" [class.selected]="selected==='motors'" mat-list-item
-                (click)="toggle('motors')">Motors</button>
-            <div @collapse *ngIf="selected==='motors'" class="selection-details">
-                <mat-form-field>
-                    <mat-label>Rotation motor steps</mat-label>
-                    <input type="number" matInput placeholder="Number of steps">
-                </mat-form-field>
+            <button class="list-item" [class.selected]="selected==='motion'" mat-list-item
+                (click)="toggle('motion')">Motion</button>
+            <div @collapse *ngIf="selected==='motion'" class="expanded motion-details">
 
-                <mat-form-field>
-                    <mat-label>Pen motor steps</mat-label>
-                    <input type="number" matInput placeholder="Number of steps">
-                </mat-form-field>
+                <ng-container *ngIf="motionParams$|async as params">
+
+                    <mat-form-field>
+                        <mat-label>Pen up value</mat-label>
+                        <input type="number" matInput placeholder="%" [value]="params.penUpPercent"
+                            (change)="params.penUpPercent=+$event.target.value">
+                    </mat-form-field>
+
+                    <mat-form-field>
+                        <mat-label>Pen down value</mat-label>
+                        <input type="number" matInput placeholder="%" [value]="params.penDownPercent"
+                            (change)="params.penDownPercent=+$event.target.value">
+                    </mat-form-field>
+
+                    <mat-form-field>
+                        <mat-label>Drawing speed</mat-label>
+                        <input type="number" matInput placeholder="steps/sec" [value]="params.drawingSpeed"
+                            (change)="params.drawingSpeed=+$event.target.value">
+                    </mat-form-field>
+
+                    <mat-form-field>
+                        <mat-label>Travel speed</mat-label>
+                        <input type="number" matInput placeholder="steps/sec" [value]="params.travelSpeed"
+                            (change)="params.travelSpeed=+$event.target.value">
+                    </mat-form-field>
+
+                    <mat-form-field>
+                        <mat-label>Pen move delay</mat-label>
+                        <input type="number" matInput placeholder="msec" [value]="params.penMoveDelay"
+                            (change)="params.penMoveDelay=+$event.target.value">
+                    </mat-form-field>
+
+                    <mat-form-field>
+                        <mat-label>Steps per rotation</mat-label>
+                        <input type="number" matInput placeholder="inc. microsteps" [value]="params.stepsPerRotation"
+                            (change)="params.stepsPerRotation=+$event.target.value">
+                    </mat-form-field>
+
+                    <mat-checkbox [checked]="params.reversePen" (change)="params.reversePen=$event.checked">
+                        Reverse pen
+                    </mat-checkbox>
+                    <mat-checkbox [checked]="params.reverseRotation" (change)="params.reverseRotation=$event.checked">
+                        Reverse rotation
+                    </mat-checkbox>
+
+                    <button class="full-grid" mat-raised-button color="primary"
+                        (click)="updateMotionParams(params)">Save</button>
+                </ng-container>
+                <button mat-button (click)="sendCommand('pen-up')">Pen UP</button>
+                <button mat-button (click)="sendCommand('pen-down')">Pen DOWN</button>
+
+                <button mat-button (click)="sendCommand('motors-enable')">Motors ENABLE</button>
+                <button mat-button (click)="sendCommand('motors-disable')">Motors DISABLE</button>
             </div>
         </mat-action-list>
     </mat-card-content>

@@ -12,16 +12,16 @@ export class SvgSegmenter {
     ) {
     }
 
-    segment(svgText: string, resolveLayer: LayerResolveType): Layer[] {
+    segment(svgText: string, resolveLayer: LayerResolveType): { layers: Layer[], width: number, height: number } {
         const svg = this.loadSvg(svgText);
         let resolver: LayerIdResolver;
         switch (resolveLayer) {
             case 'color':
-                resolver = e => e.style.stroke || e.attributes.getNamedItem('stroke').value || null;
+                resolver = e => e.style.stroke || e.attributes.getNamedItem('stroke')?.value || null;
                 break;
             case 'inkscape':
                 resolver = e => e.attributes.getNamedItem('inkscape:groupmode')?.value === 'layer'
-                    ? e.attributes.getNamedItem('inkscape:label').value
+                    ? e.attributes.getNamedItem('inkscape:label')?.value
                     : null;
                 break;
             case 'none':
@@ -33,14 +33,18 @@ export class SvgSegmenter {
 
         const layers = new Map<string, Segment[]>();
         this.traverseSvg(svg, svg, [], resolver, layers);
-        return Array.from(layers, ([id, segments]) => {
-            const layer: Layer = {
-                id,
-                description: id ?? '<No description>',
-                segments,
-            };
-            return layer;
-        });
+        return {
+            layers: Array.from(layers, ([id, segments]) => {
+                const layer: Layer = {
+                    id,
+                    description: id ?? '<No description>',
+                    segments,
+                };
+                return layer;
+            }),
+            width: svg.width.baseVal.value || svg.viewBox.baseVal.width,
+            height: svg.height.baseVal.value || svg.viewBox.baseVal.height,
+        };
     }
 
     private loadSvg(svg: string): SVGSVGElement {

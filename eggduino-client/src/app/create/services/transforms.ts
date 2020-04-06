@@ -1,15 +1,19 @@
 import { Injectable } from '@angular/core';
-import { Layer, WIDTH, HEIGHT, Point, Segment, HOME } from 'src/app/utils';
+import { Layer, STEPS_PER_REV, Point, Segment, HOME, distanceBetweenPoints } from 'src/app/utils';
 
 @Injectable()
 export class TransformsService {
 
-    scaleLayers(layers: Layer[], hScale: number, vScale: number, vOffset: number) {
+    scaleLayers(layers: Layer[], hScale: number, vScale: number, vOffset: number, aroundCenter = true) {
         for (const layer of layers) {
             for (const segment of layer.segments) {
                 for (const point of segment.points) {
-                    point.x = (point.x - WIDTH / 2) * hScale + WIDTH / 2;
-                    point.y = (point.y - HEIGHT / 2) * vScale + HEIGHT / 2 + vOffset;
+                    if (aroundCenter) {
+                        point.x = (point.x - STEPS_PER_REV / 2) * hScale + STEPS_PER_REV / 2;
+                    } else {
+                        point.x *= hScale;
+                    }
+                    point.y = point.y * vScale + vOffset;
                 }
             }
         }
@@ -36,7 +40,7 @@ export class TransformsService {
                 for (const [index, segment] of toSort.entries()) {
                     const startPoint = segment.points[0];
 
-                    const startToTarget = this.distanceBetweenPoints(startPoint, targetPoint);
+                    const startToTarget = distanceBetweenPoints(startPoint, targetPoint);
                     if (minDistance === null || startToTarget < minDistance) {
                         minDistance = startToTarget;
                         nextSegmentIndex = index;
@@ -45,7 +49,7 @@ export class TransformsService {
 
                     if (reverseSegments) {
                         const endPoint = segment.points[segment.points.length - 1];
-                        const endToTarget = this.distanceBetweenPoints(endPoint, targetPoint);
+                        const endToTarget = distanceBetweenPoints(endPoint, targetPoint);
                         if (endToTarget < minDistance) {
                             minDistance = endToTarget;
                             nextSegmentIndex = index;
@@ -104,7 +108,7 @@ export class TransformsService {
                 const next = layer.segments[start + 1];
                 const nextStart = next.points[0];
 
-                const distance = this.distanceBetweenPoints(currentEnd, nextStart);
+                const distance = distanceBetweenPoints(currentEnd, nextStart);
                 if (distance < 2) {
                     current.points.push(...next.points.slice(1));
                     layer.segments.splice(start + 1, 1);
@@ -135,7 +139,7 @@ export class TransformsService {
             segments += layer.segments.length;
             for (const segment of layer.segments) {
                 points += segment.points.length;
-                travel += this.distanceBetweenPoints(segment.points[0], lastPoint);
+                travel += distanceBetweenPoints(segment.points[0], lastPoint);
                 lastPoint = segment.points[segment.points.length - 1];
             }
         }
@@ -147,9 +151,5 @@ export class TransformsService {
         const p1 = Math.abs(point.x * (l2.y - l1.y) - point.y * (l2.x - l1.x) + l2.x * l1.y - l2.y * l1.x);
         const p2 = Math.sqrt(Math.pow(l2.y - l1.y, 2) + Math.pow(l2.x - l1.x, 2));
         return p1 / p2;
-    }
-
-    private distanceBetweenPoints(p1: Point, p2: Point) {
-        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
     }
 }

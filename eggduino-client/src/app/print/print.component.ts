@@ -59,8 +59,8 @@ export class PrintComponent implements OnInit {
     }
   }
 
-  printSelectedFile() {
-
+  async printSelectedFile() {
+    await this.apiService.printFile(this.selected.name).toPromise();
   }
 
   private loadLayers(file: PrintFile) {

@@ -6,6 +6,21 @@
     padding: 0;
 }
 
-.selection-details {
+.expanded {
     background: rgba(0, 0, 0, 0.04);
+}
+
+.motion-details {
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    column-gap: 10px;
+    
+    .mat-button-base {
+        margin-top: 10px;
+    }
+
+    .full-grid {
+        grid-column: 1/-1;
+    }
 }
