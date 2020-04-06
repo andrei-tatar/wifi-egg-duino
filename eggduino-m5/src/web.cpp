@@ -211,7 +211,7 @@ void Web::begin(Motion &motion, Printer &printer)
         });
 
     SPIFFS.begin();
-    _server.serveStatic("/", SPIFFS, "/client");
+    _server.serveStatic("/", SPIFFS, "/client", "public,max-age=3600,immutable");
 
     _server.onNotFound([](AsyncWebServerRequest *req) {
         req->send(SPIFFS, "/client/index.html");
