@@ -2,16 +2,19 @@ import { Component, Input, OnDestroy, ElementRef, OnInit, ChangeDetectionStrateg
 
 import {
   Scene, Vector2, LatheBufferGeometry, Mesh, WebGLRenderer, Texture, MathUtils, GridHelper,
-  PerspectiveCamera, AmbientLight, DirectionalLight, MeshStandardMaterial, TextureLoader, Color
+  PerspectiveCamera, AmbientLight, DirectionalLight, MeshStandardMaterial, TextureLoader, Color, SphereGeometry
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GUI } from 'dat.gui';
+
 import { STEPS_PER_REV, DEFAULT_LAYER_COLORS, Layer, allMatches } from 'src/app/utils';
 import ResizeObserver from 'resize-observer-polyfill';
+import { createGui, createGeometry } from './options';
 
 @Component({
   selector: 'app-preview',
   template: '',
-  styles: [':host{display:block;height: 360px;}'],
+  styles: [':host{display:block;height: 360px;position:relative;}'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PreviewComponent implements OnInit, OnDestroy {
@@ -25,6 +28,7 @@ export class PreviewComponent implements OnInit, OnDestroy {
     renderer: WebGLRenderer;
     controls: OrbitControls;
     mesh: Mesh;
+    gui: GUI;
   };
 
   @Input()
@@ -44,7 +48,7 @@ export class PreviewComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const mesh = this.createEggMesh();
+    const mesh = this.createMesh();
     const camera = new PerspectiveCamera(40, 1, 0.01, 10);
     camera.position.x = -3;
     camera.position.y = 1;
@@ -80,7 +84,10 @@ export class PreviewComponent implements OnInit, OnDestroy {
     controls.rotateSpeed = .3;
     controls.enablePan = false;
 
-    this.three = { camera, scene, renderer, mesh, controls };
+    const gui = createGui(mesh, this.ctx, () => this.redraw());
+    this.element.nativeElement.appendChild(gui.domElement);
+
+    this.three = { camera, scene, renderer, mesh, controls, gui };
     this.redraw();
     this.animate();
   }
@@ -91,33 +98,22 @@ export class PreviewComponent implements OnInit, OnDestroy {
       this.three.controls.dispose();
       this.three.renderer.dispose();
       this.three.scene.dispose();
+      this.three.gui.destroy();
     }, 300);
   }
 
-  private createEggGeometry() {
-    const points = [];
-    for (let deg = 0; deg <= 180; deg += 6) {
-      const rad = Math.PI * deg / 180;
-      const point = new Vector2((0.72 + .08 * Math.cos(rad)) * Math.sin(rad), - Math.cos(rad));
-      points.push(point);
-    }
-    return new LatheBufferGeometry(points, 60);
-  }
-
-  private createEggMesh() {
+  private createMesh() {
     this.canvas = document.createElement('canvas');
     // must be power of 2
     this.canvas.width = 4096;
     this.canvas.height = 4096;
 
     this.ctx = this.canvas.getContext('2d');
-    this.ctx.fillStyle = '#CB8D66';
     this.ctx.strokeStyle = 'darkred';
-    this.ctx.lineWidth = STEPS_PER_REV / 400;
     this.ctx.lineJoin = 'round';
     this.ctx.lineCap = 'round';
     this.ctx.translate(0, this.canvas.height / 2);
-    this.ctx.scale(this.canvas.width / STEPS_PER_REV, this.canvas.height / (STEPS_PER_REV / 2));
+    this.ctx.scale(this.canvas.width / STEPS_PER_REV, this.canvas.height / STEPS_PER_REV * 2);
     this.clearDrawing();
 
     const texture = new Texture(this.canvas);
@@ -125,20 +121,15 @@ export class PreviewComponent implements OnInit, OnDestroy {
 
     const textureLoader = new TextureLoader();
 
-    const geometry = this.createEggGeometry();
     const material = new MeshStandardMaterial({
       map: texture,
       roughness: .6,
       metalness: .4,
-
       bumpMap: textureLoader.load('assets/egg_shell.png'),
-      bumpScale: .005,
-
       displacementMap: textureLoader.load('assets/egg_shell.png'),
-      displacementScale: .01,
     });
 
-    const mesh = new Mesh(geometry, material);
+    const mesh = new Mesh(createGeometry(), material);
     mesh.rotateY(MathUtils.degToRad(180));
     return mesh;
   }
@@ -177,7 +168,10 @@ export class PreviewComponent implements OnInit, OnDestroy {
           }
         }
 
-        this.ctx.stroke();
+        this.ctx.save();
+        this.ctx.resetTransform();
+        this.ctx.stroke(); // prevent scaling the line width
+        this.ctx.restore();
       }
     }
   }
@@ -189,13 +183,13 @@ export class PreviewComponent implements OnInit, OnDestroy {
   }
 
   private clearDrawing() {
-    const transform = this.ctx.getTransform();
+    this.ctx.save();
     this.ctx.resetTransform();
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.setTransform(transform);
+    this.ctx.restore();
 
     if (this.three?.mesh?.material) {
-      (this.three.mesh.material as any).map.needsUpdate = true;
+      (this.three.mesh.material as MeshStandardMaterial).map.needsUpdate = true;
     }
   }
 
@@ -230,7 +224,7 @@ export class PreviewComponent implements OnInit, OnDestroy {
       }
     }
 
-    const hash = Math.abs(this.hashString(layer.description ?? ''));
+    const hash = Math.abs(this.hashString(layer.id ?? ''));
     return DEFAULT_LAYER_COLORS[hash % DEFAULT_LAYER_COLORS.length];
   }
 
@@ -246,3 +240,4 @@ export class PreviewComponent implements OnInit, OnDestroy {
     return hash >> 16 | hash & 0xFFFF;
   }
 }
+
