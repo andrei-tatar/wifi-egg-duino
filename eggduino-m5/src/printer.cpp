@@ -49,10 +49,9 @@ void Printer::processNextCommand()
         {
             motion.disableMotors();
         }
-        else if (buffer[0] == 'Z' && progressHandler)
+        else if (buffer[0] == 'Z')
         {
-            uint8_t progress = atoi(&buffer[2]);
-            progressHandler(progress);
+            progress = atoi(&buffer[2]);
         }
         else if (buffer[0] == 'S' && pauseHandler)
         {
@@ -85,11 +84,6 @@ void Printer::onPause(PrinterPauseHandler handler)
     pauseHandler = handler;
 }
 
-void Printer::onProgress(PrinterProgressHandler handler)
-{
-    progressHandler = handler;
-}
-
 void Printer::continuePrint()
 {
     if (waiting)
@@ -101,7 +95,7 @@ void Printer::continuePrint()
 
 void Printer::update()
 {
-    if (printing && !motion.update() && !waiting)
+    if (printing && !motion.isMoving() && !waiting)
     {
         processNextCommand();
     }

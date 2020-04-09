@@ -5,7 +5,6 @@
 #include "FS.h"
 
 typedef std::function<void(String waitingFor)> PrinterPauseHandler;
-typedef std::function<void(uint8_t percentage)> PrinterProgressHandler;
 
 class Printer
 {
@@ -17,8 +16,9 @@ public:
     void update();
     void continuePrint();
     void onPause(PrinterPauseHandler handler);
-    void onProgress(PrinterProgressHandler handler);
     bool isPrinting() { return printing ? true : false; }
+    const char *printingFileName() { return printing->name(); }
+    const uint8_t getProgress() { return progress; }
 
 private:
     void processNextCommand();
@@ -29,7 +29,6 @@ private:
     File *printing;
     Motion &motion;
     PrinterPauseHandler pauseHandler;
-    PrinterProgressHandler progressHandler;
 };
 
 #endif

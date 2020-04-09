@@ -7,9 +7,9 @@
 #include "printer.h"
 #include "Free_Fonts.h"
 
-Web web(SD);
 Motion motion;
 Printer printer(motion);
+Web web(SD, motion, printer);
 
 void setup()
 {
@@ -25,12 +25,8 @@ void setup()
     M5.Speaker.beep();
   });
 
-  printer.onProgress([](uint8_t percentage) {
-    M5.Lcd.progressBar(0, 0, M5.Lcd.width(), 10, percentage);
-  });
-
   motion.begin();
-  web.begin(motion, printer);
+  web.begin();
 
   uint8_t count = 0;
   while (WiFi.status() != WL_CONNECTED && count < 30)

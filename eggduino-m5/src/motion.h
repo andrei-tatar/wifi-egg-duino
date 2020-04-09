@@ -33,7 +33,7 @@ class Motion
 public:
     Motion();
     void begin();
-    bool update();
+    bool isMoving();
 
     void travelHome();
     void travelAbsolute(long x, long y);
@@ -44,19 +44,22 @@ public:
     void getParameters(MotionParameters &params);
     void setParameters(const MotionParameters &params);
     bool isPenUp() { return _isPenUp; }
-    
+
     long getPenPosition();
     void setPenPosition(long pos);
 
+    void moveTask();
+
 private:
     void applyParameters();
+    void startTimer();
 
     AccelStepper mRotation, mPen;
     MultiStepper multiStepper;
 
     int32_t posX, posY;
     uint16_t penUpValue, penDownValue;
-    bool _isPenUp;
+    bool _isPenUp, _isMoving;
     Preferences preferences;
     MotionParameters parameters;
 };

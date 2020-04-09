@@ -2,6 +2,12 @@
 #include "esp32-hal-ledc.h"
 #include "motion.h"
 
+void moveTaskHandler(void *parameter)
+{
+    ((Motion *)parameter)->moveTask();
+    vTaskDelete(NULL);
+}
+
 Motion::Motion()
     : mRotation(AccelStepper::DRIVER, PIN_ROT_STEP, PIN_ROT_DIR),
       mPen(AccelStepper::DRIVER, PIN_PEN_STEP, PIN_PEN_DIR)
@@ -28,15 +34,30 @@ void Motion::begin()
     penUp();
 }
 
-bool Motion::update()
+void Motion::startTimer()
 {
-    return multiStepper.run();
+    _isMoving = true;
+    xTaskCreate(moveTaskHandler, "MOVE", 10000, this, 10, NULL);
+}
+
+void Motion::moveTask()
+{
+    while (multiStepper.run())
+    {
+    }
+    _isMoving = false;
+}
+
+bool Motion::isMoving()
+{
+    return _isMoving;
 }
 
 void Motion::travelHome()
 {
     long pos[2] = {0, 0};
     multiStepper.moveTo(pos);
+    startTimer();
 }
 
 long Motion::getPenPosition()
@@ -48,6 +69,7 @@ void Motion::setPenPosition(long penPos)
 {
     long pos[2] = {mRotation.currentPosition(), penPos};
     multiStepper.moveTo(pos);
+    startTimer();
 }
 
 void Motion::travelAbsolute(long x, long y)
@@ -55,6 +77,7 @@ void Motion::travelAbsolute(long x, long y)
     long pos[2] = {x, y};
 
     multiStepper.moveTo(pos);
+    startTimer();
 }
 
 void Motion::enableMotors()

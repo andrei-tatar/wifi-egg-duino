@@ -1,4 +1,9 @@
 {
+    "/api/ws": {
+        "target": "http://192.168.1.139",
+        "secure": false,
+        "ws": true
+    },
     "/api": {
         "target": "http://192.168.1.139",
         "secure": false

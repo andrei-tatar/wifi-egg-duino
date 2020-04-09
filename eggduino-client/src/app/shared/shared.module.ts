@@ -17,6 +17,7 @@ import { ApiService } from './api.service';
 import { CodeConverter } from './code-convert';
 import { HttpClientModule } from '@angular/common/http';
 import { PresentationService } from './presentation.service';
+import { WebSocketService } from './ws.service';
 
 @NgModule({
   declarations: [
@@ -40,7 +41,7 @@ export class SharedModule {
       ngModule: SharedModule,
       providers: [
         ApiService, CodeConverter,
-        PresentationService,
+        PresentationService, WebSocketService,
       ],
     };
   }

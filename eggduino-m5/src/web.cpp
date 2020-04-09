@@ -3,58 +3,61 @@
 
 const String extension = ".egg";
 
-Web::Web(FS &fs, String rootPath, uint16_t port)
+Web::Web(FS &fs, Motion &motion, Printer &printer, String rootPath, uint16_t port)
     : _fs(fs),
+      _motion(motion),
+      _printer(printer),
       _rootPath(rootPath),
-      _server(port)
+      _server(port),
+      _ws("/api/ws")
 {
 }
 
-void Web::begin(Motion &motion, Printer &printer)
+void Web::begin()
 {
+    SPIFFS.begin();
     _fs.mkdir(_rootPath);
-    _server.begin();
 
-    _server.on("/api/print/*", HTTP_POST,
-               [this, &printer](AsyncWebServerRequest *req) {
-                   if (printer.isPrinting())
-                   {
-                       req->send(400);
-                       return;
-                   }
+    _server.on("/api/print/*", HTTP_POST, [this](AsyncWebServerRequest *req) {
+        if (_printer.isPrinting())
+        {
+            req->send(400);
+            return;
+        }
 
-                   String path = _rootPath + "/" + req->url().substring(11) + extension;
-                   if (_fs.exists(path))
-                   {
-                       File file = _fs.open(path);
-                       printer.print(file);
-                       req->send(200);
-                   }
-                   else
-                   {
-                       req->send(404);
-                   }
-               });
+        String path = _rootPath + "/" + req->url().substring(11) + extension;
+        if (_fs.exists(path))
+        {
+            File file = _fs.open(path);
+            _printer.print(file);
+            req->send(200);
+            _ws.textAll(getStatusJson());
+        }
+        else
+        {
+            req->send(404);
+        }
+    });
 
-    _server.on("/api/command", HTTP_POST, [this, &motion](AsyncWebServerRequest *req) {
+    _server.on("/api/command", HTTP_POST, [this](AsyncWebServerRequest *req) {
         if (req->hasParam("command", true))
         {
             auto cmd = req->getParam("command", true)->value();
             if (cmd.equals("pen-up"))
-                motion.penUp();
+                _motion.penUp();
             else if (cmd.equals("pen-down"))
-                motion.penDown();
+                _motion.penDown();
             else if (cmd.equals("motors-enable"))
-                motion.enableMotors();
+                _motion.enableMotors();
             else if (cmd.equals("motors-disable"))
-                motion.disableMotors();
+                _motion.disableMotors();
         }
         req->send(200);
     });
 
-    _server.on("/api/motion", HTTP_PATCH, [this, &motion](AsyncWebServerRequest *req) {
+    _server.on("/api/motion", HTTP_PATCH, [this](AsyncWebServerRequest *req) {
         MotionParameters params;
-        motion.getParameters(params);
+        _motion.getParameters(params);
 
         if (req->hasParam("penUpPercent", true))
         {
@@ -88,13 +91,13 @@ void Web::begin(Motion &motion, Printer &printer)
         {
             params.reverseRotation = req->getParam("reverseRotation", true)->value().equals("true");
         }
-        motion.setParameters(params);
+        _motion.setParameters(params);
         req->send(200);
     });
 
-    _server.on("/api/motion", HTTP_GET, [this, &motion](AsyncWebServerRequest *req) {
+    _server.on("/api/motion", HTTP_GET, [this](AsyncWebServerRequest *req) {
         MotionParameters params;
-        motion.getParameters(params);
+        _motion.getParameters(params);
         String response = "{";
         response += "\"penUpPercent\":";
         response += params.penUpPercent;
@@ -193,15 +196,12 @@ void Web::begin(Motion &motion, Printer &printer)
                    }
                });
 
-    _server.on(
-        "/api/config", HTTP_GET,
-        [this](AsyncWebServerRequest *req) {
-            req->send(_fs, _rootPath + "/config.json");
-        });
+    _server.on("/api/config", HTTP_GET, [this](AsyncWebServerRequest *req) {
+        req->send(_fs, _rootPath + "/config.json");
+    });
 
     _server.on(
-        "/api/config", HTTP_POST,
-        [](AsyncWebServerRequest *request) {},
+        "/api/config", HTTP_POST, [](AsyncWebServerRequest *request) {},
         NULL,
         [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
             auto file = _fs.open(_rootPath + "/config.json", "w");
@@ -210,10 +210,33 @@ void Web::begin(Motion &motion, Printer &printer)
             request->send(200, "application/json", "{}");
         });
 
-    SPIFFS.begin();
     _server.serveStatic("/", SPIFFS, "/client", "public,max-age=3600,immutable");
-
+    _server.addHandler(&_ws);
     _server.onNotFound([](AsyncWebServerRequest *req) {
         req->send(SPIFFS, "/client/index.html");
     });
+
+    _ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+        switch (type)
+        {
+        case WS_EVT_CONNECT:
+            client->text(getStatusJson());
+            break;
+        case WS_EVT_DATA:
+            break;
+        }
+    });
+
+    _server.begin();
+}
+
+String Web::getStatusJson()
+{
+    String status = "{";
+    status += "\"printing\":";
+    status += _printer.isPrinting() ? "true" : "false";
+    status += ",\"name\":";
+    status += _printer.isPrinting() ? _printer.printingFileName() : "null";
+    status += "}";
+    return status;
 }
