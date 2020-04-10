@@ -1,19 +1,24 @@
-<mat-card>
+<mat-card class="file-list" *ngIf="(isPrinting$|async) == false">
     <mat-card-content>
         <mat-action-list>
             <div mat-subheader>Files</div>
             <ng-container *ngFor="let file of files$|async">
-                <button class="list-item" [class.selected]="selected===file" mat-list-item
+                <button class="list-item" [class.selected]="selectedFileName===file.name" mat-list-item
                     (click)="selectFile(file)">{{file.name}}</button>
-                <div @collapse *ngIf="selected===file" class="selection-details">
+                <div @collapse *ngIf="selectedFileName===file.name" class="selection-details">
                     <app-preview [layers]="file.layers$|async">
                     </app-preview>
                     <div class="actions">
-                        <button mat-raised-button color="primary" (click)="printSelectedFile()">Print</button>
+                        <button mat-raised-button color="primary" (click)="printFile(file)">Print</button>
                         <button mat-raised-button (click)="deleteFile(file)">Delete</button>
                     </div>
                 </div>
             </ng-container>
         </mat-action-list>
+    </mat-card-content>
+</mat-card>
+<mat-card *ngIf="(isPrinting$|async) == true">
+    <mat-card-content>
+        <app-print-control></app-print-control>
     </mat-card-content>
 </mat-card>

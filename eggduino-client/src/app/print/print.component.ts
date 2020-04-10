@@ -1,11 +1,12 @@
-import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { ApiService, PrintFile } from '../shared/api.service';
-import { map, shareReplay } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { map, shareReplay, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
 import { Layer } from '../utils';
 import { CodeConverter } from '../shared/code-convert';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { collapse } from '../animations';
+import { WebSocketService } from '../shared/ws.service';
 
 @Component({
   selector: 'app-print',
@@ -14,9 +15,10 @@ import { collapse } from '../animations';
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [collapse]
 })
-export class PrintComponent implements OnInit {
-  private selectFileName: string;
-  selected: PrintFile;
+export class PrintComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject();
+
+  selectedFileName: string;
 
   files$ = this.apiService.files$.pipe(
     map(files => files.map(file => {
@@ -24,27 +26,40 @@ export class PrintComponent implements OnInit {
         ...file,
         layers$: this.loadLayers(file),
       };
-
-      if (file.name === this.selectFileName) {
-        this.selected = model;
-        this.selectFileName = null;
-        this.cdr.markForCheck();
-      }
-
       return model;
     })),
+  );
+
+  isPrinting$ = this.ws.status$.pipe(
+    map(s => s.status !== 'stopped'),
+    distinctUntilChanged(),
   );
 
   constructor(
     private apiService: ApiService,
     private codeConverter: CodeConverter,
     private cdr: ChangeDetectorRef,
-    route: ActivatedRoute,
+    private ws: WebSocketService,
+    private router: Router,
+    private route: ActivatedRoute,
   ) {
-    this.selectFileName = route.snapshot.queryParams.select;
   }
 
-  ngOnInit(): void {
+  ngOnInit() {
+    this.route.queryParams
+      .pipe(
+        map(q => q.select),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(s => {
+        this.selectedFileName = s;
+        this.cdr.markForCheck();
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
   }
 
   async deleteFile(file: PrintFileModel) {
@@ -52,15 +67,16 @@ export class PrintComponent implements OnInit {
   }
 
   selectFile(file: PrintFileModel) {
-    if (this.selected === file) {
-      this.selected = null;
-    } else {
-      this.selected = file;
-    }
+    this.router.navigate(['.'], {
+      relativeTo: this.route,
+      queryParams: {
+        select: file.name,
+      },
+    });
   }
 
-  async printSelectedFile() {
-    await this.apiService.printFile(this.selected.name).toPromise();
+  async printFile(file: PrintFile) {
+    await this.apiService.printFile(file.name).toPromise();
   }
 
   private loadLayers(file: PrintFile) {

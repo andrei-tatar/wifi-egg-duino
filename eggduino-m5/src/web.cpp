@@ -3,9 +3,8 @@
 
 const String extension = ".egg";
 
-Web::Web(FS &fs, Motion &motion, Printer &printer, String rootPath, uint16_t port)
+Web::Web(FS &fs, Printer &printer, String rootPath, uint16_t port)
     : _fs(fs),
-      _motion(motion),
       _printer(printer),
       _rootPath(rootPath),
       _server(port),
@@ -44,20 +43,26 @@ void Web::begin()
         {
             auto cmd = req->getParam("command", true)->value();
             if (cmd.equals("pen-up"))
-                _motion.penUp();
+                _printer.penUp();
             else if (cmd.equals("pen-down"))
-                _motion.penDown();
+                _printer.penDown();
             else if (cmd.equals("motors-enable"))
-                _motion.enableMotors();
+                _printer.enableMotors();
             else if (cmd.equals("motors-disable"))
-                _motion.disableMotors();
+                _printer.disableMotors();
+            else if (cmd.equals("print-continue"))
+                _printer.continuePrint();
+            else if (cmd.equals("print-stop"))
+                _printer.stop();
+            else if (cmd.equals("print-pause"))
+                _printer.pause();
         }
         req->send(200);
     });
 
     _server.on("/api/motion", HTTP_PATCH, [this](AsyncWebServerRequest *req) {
         MotionParameters params;
-        _motion.getParameters(params);
+        _printer.getParameters(params);
 
         if (req->hasParam("penUpPercent", true))
         {
@@ -91,13 +96,13 @@ void Web::begin()
         {
             params.reverseRotation = req->getParam("reverseRotation", true)->value().equals("true");
         }
-        _motion.setParameters(params);
+        _printer.setParameters(params);
         req->send(200);
     });
 
     _server.on("/api/motion", HTTP_GET, [this](AsyncWebServerRequest *req) {
         MotionParameters params;
-        _motion.getParameters(params);
+        _printer.getParameters(params);
         String response = "{";
         response += "\"penUpPercent\":";
         response += params.penUpPercent;
@@ -217,26 +222,50 @@ void Web::begin()
     });
 
     _ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
-        switch (type)
+        if (type == WS_EVT_CONNECT)
         {
-        case WS_EVT_CONNECT:
             client->text(getStatusJson());
-            break;
-        case WS_EVT_DATA:
-            break;
         }
     });
 
     _server.begin();
+
+    _printer.onProgressChanged([this]() {
+        char buff[20];
+        snprintf(buff, sizeof(buff), "{\"progress\":%lu}", _printer.getPrintedLines());
+        _ws.textAll(buff);
+    });
+
+    _printer.onStatusChanged([this]() {
+        _ws.textAll(getStatusJson());
+    });
 }
 
 String Web::getStatusJson()
 {
-    String status = "{";
-    status += "\"printing\":";
-    status += _printer.isPrinting() ? "true" : "false";
-    status += ",\"name\":";
-    status += _printer.isPrinting() ? _printer.printingFileName() : "null";
-    status += "}";
-    return status;
+    char buff[200];
+    if (_printer.isPrinting())
+    {
+        String fileName = _printer.printingFileName();
+        fileName = fileName.substring(_rootPath.length() + 1, fileName.length() - extension.length());
+        if (_printer.isPaused())
+        {
+            snprintf(buff, sizeof(buff), "{\"status\":\"paused\",\"waitingFor\":\"%s\",\"fileName\":\"%s\",\"progress\":%lu}",
+                     _printer.getWaitingFor().c_str(),
+                     fileName.c_str(),
+                     _printer.getPrintedLines());
+        }
+        else
+        {
+            snprintf(buff, sizeof(buff), "{\"status\":\"printing\",\"fileName\":\"%s\",\"progress\":%lu}",
+                     fileName.c_str(),
+                     _printer.getPrintedLines());
+        }
+    }
+    else
+    {
+        snprintf(buff, sizeof(buff), "{\"status\":\"stopped\"}");
+    }
+
+    return String(buff);
 }

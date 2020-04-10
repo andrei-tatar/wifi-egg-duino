@@ -19,15 +19,15 @@ export class CodeConverter {
             }
         }
 
-        const reportProgress = function (this: { c: number, last: Point, travel: number }, point: Point) {
+        const reportProgress = function _(this: { lastProgress?: number, last: Point, travel: number }, point: Point) {
             this.travel += distanceBetweenPoints(this.last, point);
-            this.c++;
             this.last = point;
-            if (this.c % 20 === 0) {
-                const progress = Math.round(this.travel / totalTravel * 100);
+            const progress = Math.round(this.travel / totalTravel * 100);
+            if (progress !== this.lastProgress) {
                 instructions.push(`${Commands.Progress} ${progress}`);
+                this.lastProgress = progress;
             }
-        }.bind({ c: 0, last: { x: 0, y: 0 }, travel: 0 });
+        }.bind({ last: { x: 0, y: 0 }, travel: 0 });
 
         for (const layer of layers) {
             if (layers.length > 1) {
@@ -59,7 +59,7 @@ export class CodeConverter {
         let start: Point;
         let penDown = false;
 
-        for (const instruction of instructions) {
+        for (const [index, instruction] of instructions.entries()) {
             const [command, ...args] = instruction.split(' ');
 
             switch (command) {
@@ -93,6 +93,7 @@ export class CodeConverter {
                     const p: Point = {
                         x: parseInt(args[0], 10),
                         y: parseInt(args[1], 10),
+                        srcLineNumber: index,
                     };
                     if (penDown) {
                         const lastSegment = segments[segments.length - 1];

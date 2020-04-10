@@ -1,0 +1,4 @@
+<h4>{{status$|async}}</h4>
+<button (click)="pauseContinuePrint()">Pause/Continue</button>
+<button (click)="stopPrint()">Stop</button>
+<app-preview [layers]="layers$|async" [lineNumber]="progress$|async"></app-preview>

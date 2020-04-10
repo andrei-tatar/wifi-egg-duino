@@ -3,13 +3,11 @@
 #include <WiFi.h>
 
 #include "web.h"
-#include "motion.h"
 #include "printer.h"
 #include "Free_Fonts.h"
 
-Motion motion;
-Printer printer(motion);
-Web web(SD, motion, printer);
+Printer printer;
+Web web(SD, printer);
 
 void setup()
 {
@@ -17,15 +15,7 @@ void setup()
   M5.begin();
   M5.Lcd.setFreeFont(FSS12);
   M5.Lcd.println();
-
-  printer.onPause([](String waitFor) {
-    M5.Lcd.clear();
-    M5.Lcd.println("Waiting for");
-    M5.Lcd.println(waitFor);
-    M5.Speaker.beep();
-  });
-
-  motion.begin();
+  printer.begin();
   web.begin();
 
   uint8_t count = 0;
@@ -41,7 +31,6 @@ void setup()
 void loop()
 {
   M5.update();
-  printer.update();
 
   if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnC.wasPressed())
   {

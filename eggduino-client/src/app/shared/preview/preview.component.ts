@@ -22,6 +22,7 @@ export class PreviewComponent implements OnInit, OnDestroy {
   private canvas: HTMLCanvasElement;
   private animationTimer: number;
   private layersInternal: Layer[];
+  private lineNumberInternal: number | undefined;
   private three: {
     camera: PerspectiveCamera;
     scene: Scene;
@@ -32,9 +33,16 @@ export class PreviewComponent implements OnInit, OnDestroy {
   };
 
   @Input()
-  get layers() { return this.layersInternal; }
-  set layers(value) {
+  set layers(value: Layer[]) {
     this.layersInternal = value;
+    if (this.ctx) {
+      this.redraw();
+    }
+  }
+
+  @Input()
+  set lineNumber(value: number | undefined) {
+    this.lineNumberInternal = value;
     if (this.ctx) {
       this.redraw();
     }
@@ -137,6 +145,9 @@ export class PreviewComponent implements OnInit, OnDestroy {
   private redraw() {
     this.clearDrawing();
     if (!this.layersInternal) { return; }
+
+    let stop = false;
+
     for (const layer of this.layersInternal) {
       this.ctx.strokeStyle = this.getLayerColor(layer);
 
@@ -146,6 +157,12 @@ export class PreviewComponent implements OnInit, OnDestroy {
         for (let i = 0; i < segment.points.length - 1; i++) {
           const from = segment.points[i];
           const to = segment.points[i + 1];
+          if (typeof this.lineNumberInternal === 'number' &&
+            (from.srcLineNumber > this.lineNumberInternal ||
+              to.srcLineNumber > this.lineNumberInternal)) {
+            stop = true;
+            break;
+          }
           if (i === 0) {
             this.ctx.moveTo(from.x, from.y);
           }
@@ -172,6 +189,8 @@ export class PreviewComponent implements OnInit, OnDestroy {
         this.ctx.resetTransform();
         this.ctx.stroke(); // prevent scaling the line width
         this.ctx.restore();
+
+        if (stop) { return; }
       }
     }
   }

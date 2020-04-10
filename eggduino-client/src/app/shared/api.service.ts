@@ -130,7 +130,8 @@ export class ApiService {
     }
 }
 
-export type MotionCommand = 'pen-up' | 'pen-down' | 'motors-enable' | 'motors-disable';
+export type MotionCommand = 'pen-up' | 'pen-down' | 'motors-enable' | 'motors-disable' |
+    'print-pause' | 'print-stop' | 'print-continue';
 
 export interface PrintFile {
     name: string;

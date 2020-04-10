@@ -10,6 +10,7 @@ export const DEFAULT_LAYER_COLORS = [
 export interface Point {
     x: number;
     y: number;
+    srcLineNumber?: number;
 }
 
 export interface Segment {
