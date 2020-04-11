@@ -17,7 +17,8 @@ import { SharedModule } from './shared/shared.module';
     RouterModule.forRoot([
       { path: 'print', loadChildren: () => import('./print/print.module').then(m => m.PrintModule) },
       { path: 'create', loadChildren: () => import('./create/create.module').then(m => m.CreateModule) },
-      { path: 'setup', loadChildren: () => import('./setup/setup.module').then(m => m.SetupModule) }
+      { path: 'setup', loadChildren: () => import('./setup/setup.module').then(m => m.SetupModule) },
+      { path: '**', redirectTo: 'print' },
     ]),
   ],
   providers: [],
