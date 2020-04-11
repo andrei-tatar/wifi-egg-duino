@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatListModule } from '@angular/material/list';
+import { MatDialogModule } from '@angular/material/dialog';
 
 import { PreviewComponent } from './preview/preview.component';
 import { ApiService } from './api.service';
@@ -18,13 +19,15 @@ import { CodeConverter } from './code-convert';
 import { HttpClientModule } from '@angular/common/http';
 import { PresentationService } from './presentation.service';
 import { WebSocketService } from './ws.service';
+import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
 
 @NgModule({
   declarations: [
-    PreviewComponent
+    PreviewComponent,
+    ConfirmationDialogComponent
   ],
   imports: [
-    CommonModule, HttpClientModule, MatSnackBarModule,
+    CommonModule, HttpClientModule, MatSnackBarModule, MatDialogModule,
     MatButtonModule, MatTabsModule, MatInputModule, MatToolbarModule, MatCardModule,
     MatCheckboxModule, MatSelectModule, MatSliderModule, MatListModule,
   ],
