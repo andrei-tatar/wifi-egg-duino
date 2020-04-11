@@ -8,8 +8,8 @@
         </mat-card-title>
         <mat-card-content class="content-container">
             <div class="options-container">
-                <app-expander>
-                    <span expander-title>Layers</span>
+                <app-config [stats]="stats">
+                    <span config-title>Layers</span>
                     <mat-form-field class="mt-1">
                         <mat-label>Resolve Type</mat-label>
                         <mat-select [value]="layerResolverType$|async" (valueChange)="updateLayerResolveType($event)">
@@ -27,9 +27,7 @@
                             </mat-checkbox>
                         </div>
                     </div>
-                </app-expander>
-
-                <app-config [stats]="stats"></app-config>
+                </app-config>
             </div>
             <app-preview [layers]="visibleLayers" [showTravel]="true"></app-preview>
         </mat-card-content>

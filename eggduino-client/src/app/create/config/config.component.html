@@ -1,75 +1,93 @@
 <ng-container *ngIf="config$|async as config">
-    <app-expander>
-        <span expander-title>Scale</span>
-        <div class="grid-container">
-            <mat-label>Hor. scale</mat-label>
+    <mat-accordion>
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    <ng-content select="[config-title]">
+                    </ng-content>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <ng-content></ng-content>
+        </mat-expansion-panel>
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    Scale
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="grid-container">
+                <mat-label>Hor. scale</mat-label>
+                <input matInput type="number" [value]="config.hScale" (input)="update('hScale', +$event.target.value)"
+                    min=".001" max="3" step=".001">
+                <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="config.hScale"
+                    (input)="update('hScale', $event.value)">
+                </mat-slider>
 
-            <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="config.hScale"
-                (input)="update('hScale', $event.value)">
-            </mat-slider>
-            <input matInput type="number" [value]="config.hScale" (input)="update('hScale', +$event.target.value)"
-                min=".001" max="3" step=".001">
+                <mat-label>Ver. scale</mat-label>
+                <input matInput type="number" [value]="config.vScale" (input)="update('vScale', +$event.target.value)"
+                    min=".001" max="3" step=".001">
+                <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="config.vScale"
+                    (input)="update('vScale', $event.value)">
+                </mat-slider>
 
-            <mat-label>Ver. scale</mat-label>
-            <mat-slider thumbLabel min=".01" max="3" step=".001" [value]="config.vScale"
-                (input)="update('vScale', $event.value)">
-            </mat-slider>
-            <input matInput type="number" [value]="config.vScale" (input)="update('vScale', +$event.target.value)"
-                min=".001" max="3" step=".001">
+                <mat-label>Ver. offset</mat-label>
+                <input matInput type="number" [value]="config.vOffset" (input)="update('vOffset', +$event.target.value)"
+                    min="-90" max="90" step=".1">
+                <mat-slider thumbLabel min="-90" max="90" step=".1" [value]="config.vOffset"
+                    (input)="update('vOffset', $event.value)">
+                </mat-slider>
+            </div>
+        </mat-expansion-panel>
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    Travel &nbsp;
+                    <span class="details">{{stats?.travel|percent}}</span>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <mat-checkbox class="mb" [checked]="config.optimizeTravel"
+                (change)="update('optimizeTravel', $event.checked)">
+                Optimize travel distances
+            </mat-checkbox>
 
-            <mat-label>Ver. offset</mat-label>
-            <mat-slider thumbLabel min="-90" max="90" step=".1" [value]="config.vOffset"
-                (input)="update('vOffset', $event.value)">
-            </mat-slider>
-            <input matInput type="number" [value]="config.vOffset" (input)="update('vOffset', +$event.target.value)"
-                min="-90" max="90" step=".1">
-        </div>
-    </app-expander>
+            <mat-checkbox @collapse *ngIf="config.optimizeTravel" class="mb" [checked]="config.reverseSegments"
+                (change)="update('reverseSegments', $event.checked)">
+                Reverse segments
+            </mat-checkbox>
+        </mat-expansion-panel>
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    Simplify &nbsp;
+                    <span *ngIf="stats?.points" class="details">{{stats.points|percent}} pt.</span>&nbsp;
+                    <span *ngIf="stats?.segments" class="details">{{stats.segments|percent}} seg.</span>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <mat-checkbox class="mb" [checked]="config.mergeSegments"
+                (change)="update('mergeSegments', $event.checked)">
+                Merge segments
+            </mat-checkbox>
+            <div class="grid-container" @collapse *ngIf="config.mergeSegments">
+                <mat-label>Min. dist.</mat-label>
+                <input matInput type="number" [value]="config.minTravelDistance"
+                    (input)="update('minTravelDistance', +$event.target.value)" min=".01" max=".3" step=".01">
+                <mat-slider thumbLabel min=".01" max=".3" step=".01" [value]="config.minTravelDistance"
+                    (input)="update('minTravelDistance', $event.value)">
+                </mat-slider>
+            </div>
 
-    <app-expander>
-        <span expander-title>
-            Travel &nbsp;
-            <span class="details">{{stats?.travel|percent}}</span>
-        </span>
-        <mat-checkbox class="mb" [checked]="config.optimizeTravel" (change)="update('optimizeTravel', $event.checked)">
-            Optimize travel distances
-        </mat-checkbox>
-
-        <mat-checkbox *ngIf="config.optimizeTravel" class="mb" [checked]="config.reverseSegments"
-            (change)="update('reverseSegments', $event.checked)">
-            Reverse segments
-        </mat-checkbox>
-    </app-expander>
-
-    <app-expander>
-        <span expander-title>Simplify
-            <span *ngIf="stats?.points" class="details">{{stats.points|percent}} pt.</span>&nbsp;
-            <span *ngIf="stats?.segments" class="details">{{stats.segments|percent}} seg.</span>
-        </span>
-
-        <mat-checkbox class="mb" [checked]="config.mergeSegments" (change)="update('mergeSegments', $event.checked)">
-            Merge segments
-        </mat-checkbox>
-        <div class="grid-container" *ngIf="config.mergeSegments">
-            <mat-label>Min. dist.</mat-label>
-            <mat-slider thumbLabel min=".01" max=".3" step=".01" [value]="config.minTravelDistance"
-                (input)="update('minTravelDistance', $event.value)">
-            </mat-slider>
-            <input matInput type="number" [value]="config.minTravelDistance"
-                (input)="update('minTravelDistance', +$event.target.value)" min=".01" max=".3" step=".01">
-        </div>
-
-        <mat-checkbox class="mb" [checked]="config.simplifySegments"
-            (change)="update('simplifySegments', $event.checked)">
-            Simplify segments
-        </mat-checkbox>
-        <div class="grid-container" *ngIf="config.simplifySegments">
-            <mat-label>Simplify thld.</mat-label>
-            <mat-slider thumbLabel min=".01" max=".3" step=".01" [value]="config.simplifyThreshold"
-                (input)="update('simplifyThreshold', $event.value)">
-            </mat-slider>
-            <input matInput type="number" [value]="config.simplifyThreshold"
-                (input)="update('simplifyThreshold', +$event.target.value)" min=".01" max=".3" step=".01">
-        </div>
-    </app-expander>
+            <mat-checkbox class="mb" [checked]="config.simplifySegments"
+                (change)="update('simplifySegments', $event.checked)">
+                Simplify segments
+            </mat-checkbox>
+            <div class="grid-container" @collapse *ngIf="config.simplifySegments">
+                <mat-label>Simplify thld.</mat-label>
+                <input matInput type="number" [value]="config.simplifyThreshold"
+                    (input)="update('simplifyThreshold', +$event.target.value)" min=".01" max=".3" step=".01">
+                <mat-slider thumbLabel min=".01" max=".3" step=".01" [value]="config.simplifyThreshold"
+                    (input)="update('simplifyThreshold', $event.value)">
+                </mat-slider>
+            </div>
+        </mat-expansion-panel>
+    </mat-accordion>
 </ng-container>

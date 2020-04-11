@@ -12,10 +12,11 @@
 
 .grid-container {
     display: grid;
-    grid-template-columns: 1.2fr 2fr 0.7fr;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
 
-    > mat-label {
-        align-self: center;
+    mat-slider {
+        grid-column: 1 / -1;
     }
 }
 

@@ -148,11 +148,31 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     return mesh;
   }
 
+  private switchStrokeToTransparent() {
+    this.ctx.save();
+    this.ctx.resetTransform();
+    this.ctx.stroke();
+    this.ctx.restore();
+
+    this.ctx.globalAlpha = .1;
+    this.ctx.beginPath();
+  }
+
   private redraw() {
     this.clearDrawing();
     if (!this.layersInternal) { return; }
 
     let found = false;
+
+    const checkCurrentLine = (...points: Point[]) => {
+      if (!found && typeof this.lineNumberInternal === 'number' &&
+        points.some(p => p.srcLineNumber >= this.lineNumberInternal)) {
+        this.switchStrokeToTransparent();
+        found = true;
+        return true;
+      }
+      return false;
+    };
 
     this.ctx.save();
     for (const layer of this.layersInternal) {
@@ -161,22 +181,12 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       for (const segment of layer.segments) {
         this.ctx.beginPath();
 
-        let moveTo = true;
         for (let i = 0; i < segment.points.length - 1; i++) {
           const from = segment.points[i];
           const to = segment.points[i + 1];
-          if (!found && typeof this.lineNumberInternal === 'number' &&
-            (from.srcLineNumber >= this.lineNumberInternal ||
-              to.srcLineNumber >= this.lineNumberInternal)) {
-            this.ctx.stroke();
-            this.ctx.beginPath();
-            this.ctx.globalAlpha = .1;
-            found = true;
-            moveTo = true;
-          }
+          const switched = checkCurrentLine(from, to);
 
-          this.drawLine(moveTo, from, to);
-          moveTo = false;
+          this.drawLine(i === 0 || switched, from, to);
         }
 
         this.ctx.save();
@@ -185,30 +195,28 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         this.ctx.restore();
       }
     }
+    this.ctx.restore();
 
     if (this.showTravel) {
+      found = false;
       this.ctx.save();
       this.ctx.lineWidth = this.ctx.lineWidth / 2;
       this.ctx.strokeStyle = 'lightgreen';
+      this.ctx.beginPath();
 
       let last = HOME;
       for (const layer of this.layersInternal) {
         for (const segment of layer.segments) {
-          this.ctx.beginPath();
+          checkCurrentLine(segment.points[0]);
           this.drawLine(true, last, segment.points[0]);
           last = segment.points[segment.points.length - 1];
-
-          this.ctx.save();
-          this.ctx.resetTransform();
-          this.ctx.stroke(); // prevent scaling the line width
-          this.ctx.restore();
         }
       }
 
+      this.ctx.resetTransform();
+      this.ctx.stroke(); // prevent scaling the line width
       this.ctx.restore();
     }
-
-    this.ctx.restore();
   }
 
   private drawLine(moveTo: boolean, from: Point, to: Point) {
