@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, ElementRef, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnDestroy, ElementRef, OnInit, ChangeDetectionStrategy, AfterViewInit } from '@angular/core';
 
 import {
   Scene, Mesh, WebGLRenderer, Texture, MathUtils, GridHelper,
@@ -17,12 +17,13 @@ import { createGui, createGeometry } from './options';
   styles: [':host{display:block;height: 360px;position:relative;}'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PreviewComponent implements OnInit, OnDestroy {
+export class PreviewComponent implements AfterViewInit, OnDestroy {
   private ctx: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement;
   private animationTimer: number;
   private layersInternal: Layer[];
   private lineNumberInternal: number | undefined;
+  private resizeObserver: ResizeObserver;
   private three: {
     camera: PerspectiveCamera;
     scene: Scene;
@@ -54,11 +55,9 @@ export class PreviewComponent implements OnInit, OnDestroy {
   constructor(
     private element: ElementRef,
   ) {
-    const observer = new ResizeObserver(([{ contentRect: { width, height } }]) => this.onResize(width, height));
-    observer.observe(element.nativeElement);
   }
 
-  ngOnInit(): void {
+  ngAfterViewInit() {
     const mesh = this.createMesh();
     const camera = new PerspectiveCamera(40, 1, 0.01, 10);
     camera.position.x = -3;
@@ -101,10 +100,14 @@ export class PreviewComponent implements OnInit, OnDestroy {
     this.three = { camera, scene, renderer, mesh, controls, gui };
     this.redraw();
     this.animate();
+
+    this.resizeObserver = new ResizeObserver(([{ contentRect: { width, height } }]) => this.onResize(width, height));
+    this.resizeObserver.observe(this.element.nativeElement);
   }
 
   ngOnDestroy() {
     this.stopAnimation();
+    this.resizeObserver?.disconnect();
     setTimeout(() => {
       this.three.controls.dispose();
       this.three.renderer.dispose();
@@ -288,4 +291,3 @@ export class PreviewComponent implements OnInit, OnDestroy {
     return hash >> 16 | hash & 0xFFFF;
   }
 }
-

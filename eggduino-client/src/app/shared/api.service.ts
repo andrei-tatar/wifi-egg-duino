@@ -91,7 +91,7 @@ export class ApiService {
             this.client.get('api/file/' + name, {
                 responseType: 'text'
             }).pipe(
-                cache(`file:${name}`),
+                cache(this.getCacheKey(name)),
             ),
             this.presentationService.globalLoader
         );
@@ -104,6 +104,7 @@ export class ApiService {
             }),
             defer(() => {
                 this.events$.next({ type: 'delete', name });
+                sessionStorage.removeItem(this.getCacheKey(name));
                 return EMPTY;
             }),
         ).pipe(ignoreElements());
@@ -137,6 +138,10 @@ export class ApiService {
             responseType: 'text',
             headers: new HttpHeaders().append('Content-Type', 'application/x-www-form-urlencoded'),
         }).pipe(ignoreElements());
+    }
+
+    private getCacheKey(fileName: string) {
+        return `file:${fileName}`;
     }
 }
 

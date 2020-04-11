@@ -70,14 +70,14 @@ export function distanceBetweenPoints(p1: Point, p2: Point) {
 
 const cacheTemp = new Map<string, Observable<string>>();
 
-export function cache(key: string): MonoTypeOperatorFunction<string> {
+export function cache(key: string, storage: Storage = sessionStorage): MonoTypeOperatorFunction<string> {
     return source => new Observable<string>(observer => {
         const cached = cacheTemp.get(key);
         if (cached) {
             return cached.subscribe(observer);
         }
 
-        const value = sessionStorage.getItem(key);
+        const value = storage.getItem(key);
         if (value != null) {
             observer.next(value);
             observer.complete();
@@ -86,7 +86,7 @@ export function cache(key: string): MonoTypeOperatorFunction<string> {
                 publishReplay(1),
                 refCount(),
                 tap(v => {
-                    sessionStorage.setItem(key, v);
+                    storage.setItem(key, v);
                 }),
                 finalize(() => {
                     cacheTemp.delete(key);

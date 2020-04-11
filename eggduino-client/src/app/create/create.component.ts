@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { SvgSegmenter, LayerResolveType } from './services/svg-segmenter';
-import { combineLatest, Subject, concat, of } from 'rxjs';
+import { combineLatest, Subject, concat, of, race } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, map, retryWhen, tap, distinctUntilChanged, first } from 'rxjs/operators';
 import { Layer, clone, removeExtension, blobToText, blobToDataUrl, propsEqual, STEPS_PER_REV } from '../utils';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -197,7 +197,10 @@ export class CreateComponent implements OnInit, OnDestroy {
       const code = this.codeConverter.layersToCode(this.visibleLayers);
       const name = this.name.nativeElement.innerText;
 
-      await this.apiService.uploadFile(name, code).toPromise();
+      await race(
+        this.apiService.uploadFile(name, code),
+        this.presentationService.globalLoader,
+      ).toPromise();
 
       this.presentationService.showToast('Saved OK');
 
@@ -209,7 +212,9 @@ export class CreateComponent implements OnInit, OnDestroy {
         });
       }
     } catch (error) {
-      this.presentationService.showToast('Error during save. Possible duplicate filename.');
+      this.presentationService
+        .showInformation({ title: 'Error', message: `Error during save. Possible duplicate filename.\n${error.message}` })
+        .toPromise();
       this.name.nativeElement.focus();
     }
   }
