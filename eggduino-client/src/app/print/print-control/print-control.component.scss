@@ -1,0 +1,13 @@
+.status-text {
+    text-transform: uppercase;
+}
+
+:host > *:not(:last-child) {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.mat-button-base {
+    min-width: 150px;
+    margin-right: 8px;
+}

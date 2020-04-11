@@ -1,17 +1,18 @@
 import { Injectable } from '@angular/core';
-import { Observable, interval, merge } from 'rxjs';
+import { Observable, interval, merge, race } from 'rxjs';
 import { switchMap, retryWhen, delay, scan, shareReplay, debounceTime, tap, ignoreElements, filter, timeout, map, refCount, publish } from 'rxjs/operators';
+import { PresentationService } from './presentation.service';
 
 @Injectable()
 export class WebSocketService {
-    private readonly ws$ = new Observable<WebSocket>(observer => {
+    private readonly ws$ = race(new Observable<WebSocket>(observer => {
         const uri = `ws://${location.host}/api/ws`;
         const ws = new WebSocket(uri);
         ws.onopen = () => observer.next(ws);
         ws.onclose = () => observer.complete();
         ws.onerror = err => observer.error(err);
         return () => ws.close();
-    });
+    }), this.presentationService.globalLoader);
 
     readonly messages$ = this.ws$.pipe(
         switchMap(ws => {
@@ -43,7 +44,6 @@ export class WebSocketService {
         }),
         retryWhen(err$ => err$.pipe(
             tap(err => console.warn('ws error; reconnecting', err)),
-            delay(500),
         )),
     );
 
@@ -65,6 +65,11 @@ export class WebSocketService {
         debounceTime(0),
         shareReplay(1),
     );
+
+    constructor(
+        private presentationService: PresentationService,
+    ) {
+    }
 }
 
 type WsMessage = Partial<{

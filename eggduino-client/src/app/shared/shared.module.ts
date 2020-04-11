@@ -12,6 +12,7 @@ import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatListModule } from '@angular/material/list';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { PreviewComponent } from './preview/preview.component';
 import { ApiService } from './api.service';
@@ -24,12 +25,12 @@ import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-
 @NgModule({
   declarations: [
     PreviewComponent,
-    ConfirmationDialogComponent
+    ConfirmationDialogComponent,
   ],
   imports: [
     CommonModule, HttpClientModule, MatSnackBarModule, MatDialogModule,
     MatButtonModule, MatTabsModule, MatInputModule, MatToolbarModule, MatCardModule,
-    MatCheckboxModule, MatSelectModule, MatSliderModule, MatListModule,
+    MatCheckboxModule, MatSelectModule, MatSliderModule, MatListModule, MatProgressSpinnerModule,
   ],
   exports: [
     CommonModule,

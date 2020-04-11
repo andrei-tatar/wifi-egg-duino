@@ -3,9 +3,24 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
+import { publish, refCount } from 'rxjs/operators';
+import { MatSpinner } from '@angular/material/progress-spinner';
+
+export const Cancel = Symbol('cancel');
 
 @Injectable()
 export class PresentationService {
+
+    globalLoader = new Observable<never>(_ => {
+        const dialogRef = this.dialog.open(MatSpinner, {
+            disableClose: true,
+            panelClass: 'loader-overlay',
+        });
+        return () => dialogRef.close();
+    }).pipe(
+        publish(),
+        refCount(),
+    );
 
     constructor(
         private snackBar: MatSnackBar,
@@ -19,10 +34,12 @@ export class PresentationService {
         });
     }
 
-    showConfirmation(title: string, message: string, okMessage = 'Yes', noMessage = 'No') {
+    showConfirmation({ title, message, okMessage = 'Yes', noMessage = 'No', disableClose }:
+        { title: string, message: string, okMessage?: string, noMessage?: string, disableClose?: boolean }) {
         return new Observable(observer => {
             const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
-                width: '250px',
+                maxWidth: '400px',
+                disableClose,
                 data: {
                     title,
                     message,
@@ -37,7 +54,33 @@ export class PresentationService {
                         observer.next(result);
                         observer.complete();
                     } else {
-                        observer.error(new Error('canceled'));
+                        observer.error(Cancel);
+                    }
+                })
+                .add(() => dialogRef.close());
+        });
+    }
+
+    showInformation({ title, message, okMessage = 'OK' }:
+        { title: string, message: string, okMessage?: string }) {
+        return new Observable(observer => {
+            const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+                disableClose: true,
+                maxWidth: '400px',
+                data: {
+                    title,
+                    message,
+                    okMessage,
+                },
+            });
+
+            return dialogRef.afterClosed()
+                .subscribe(result => {
+                    if (result) {
+                        observer.next(result);
+                        observer.complete();
+                    } else {
+                        observer.error(Cancel);
                     }
                 })
                 .add(() => dialogRef.close());

@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { PrintComponent } from './print.component';
 import { SharedModule } from '../shared/shared.module';
@@ -12,7 +13,7 @@ const routes: Routes = [
 @NgModule({
   declarations: [PrintComponent, PrintControlComponent],
   imports: [
-    SharedModule,
+    SharedModule, MatProgressBarModule,
     RouterModule.forChild(routes),
   ]
 })

@@ -3,6 +3,6 @@
     {{options.message}}
 </div>
 <div mat-dialog-actions>
-    <button mat-button (click)="onNoClick()">{{options.noMessage}}</button>
     <button mat-raised-button color="primary" [mat-dialog-close]="'ok'" cdkFocusInitial>{{options.okMessage}}</button>
+    <button *ngIf="options.noMessage" mat-button (click)="onNoClick()">{{options.noMessage}}</button>
 </div>

@@ -1,13 +1,13 @@
 import { Component, Input, OnDestroy, ElementRef, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import {
-  Scene, Vector2, LatheBufferGeometry, Mesh, WebGLRenderer, Texture, MathUtils, GridHelper,
-  PerspectiveCamera, AmbientLight, DirectionalLight, MeshStandardMaterial, TextureLoader, Color, SphereGeometry
+  Scene, Mesh, WebGLRenderer, Texture, MathUtils, GridHelper,
+  PerspectiveCamera, AmbientLight, DirectionalLight, MeshStandardMaterial, TextureLoader, Color
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GUI } from 'dat.gui';
 
-import { STEPS_PER_REV, DEFAULT_LAYER_COLORS, Layer, allMatches } from 'src/app/utils';
+import { STEPS_PER_REV, DEFAULT_LAYER_COLORS, Layer, allMatches, Point, HOME } from 'src/app/utils';
 import ResizeObserver from 'resize-observer-polyfill';
 import { createGui, createGeometry } from './options';
 
@@ -47,6 +47,9 @@ export class PreviewComponent implements OnInit, OnDestroy {
       this.redraw();
     }
   }
+
+  @Input()
+  showTravel = false;
 
   constructor(
     private element: ElementRef,
@@ -146,52 +149,78 @@ export class PreviewComponent implements OnInit, OnDestroy {
     this.clearDrawing();
     if (!this.layersInternal) { return; }
 
-    let stop = false;
+    let last = HOME;
+    let found = false;
 
+    this.ctx.save();
     for (const layer of this.layersInternal) {
       this.ctx.strokeStyle = this.getLayerColor(layer);
 
       for (const segment of layer.segments) {
+
+        if (this.showTravel) {
+          this.ctx.beginPath();
+
+          this.drawLine(true, last, segment.points[0]);
+          last = segment.points[segment.points.length - 1];
+
+          this.ctx.save();
+          this.ctx.lineWidth = this.ctx.lineWidth / 2;
+          this.ctx.strokeStyle = 'lightgreen';
+          this.ctx.resetTransform();
+          this.ctx.stroke();
+          this.ctx.restore();
+        }
+
         this.ctx.beginPath();
 
+        let moveTo = true;
         for (let i = 0; i < segment.points.length - 1; i++) {
           const from = segment.points[i];
           const to = segment.points[i + 1];
-          if (typeof this.lineNumberInternal === 'number' &&
-            (from.srcLineNumber > this.lineNumberInternal ||
-              to.srcLineNumber > this.lineNumberInternal)) {
-            stop = true;
-            break;
-          }
-          if (i === 0) {
-            this.ctx.moveTo(from.x, from.y);
-          }
-          this.ctx.lineTo(to.x, to.y);
-
-          let goBack = false;
-          if (from.x < 0 || to.x < 0) {
-            goBack = true;
-            this.ctx.moveTo(from.x + STEPS_PER_REV, from.y);
-            this.ctx.lineTo(to.x + STEPS_PER_REV, to.y);
-          }
-          if (from.x >= STEPS_PER_REV || to.x >= STEPS_PER_REV) {
-            goBack = true;
-            this.ctx.moveTo(from.x - STEPS_PER_REV, from.y);
-            this.ctx.lineTo(to.x - STEPS_PER_REV, to.y);
+          if (!found && typeof this.lineNumberInternal === 'number' &&
+            (from.srcLineNumber >= this.lineNumberInternal ||
+              to.srcLineNumber >= this.lineNumberInternal)) {
+            this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.globalAlpha = .1;
+            found = true;
+            moveTo = true;
           }
 
-          if (goBack) {
-            this.ctx.moveTo(to.x, to.y);
-          }
+          this.drawLine(moveTo, from, to);
+          moveTo = false;
         }
 
         this.ctx.save();
         this.ctx.resetTransform();
         this.ctx.stroke(); // prevent scaling the line width
         this.ctx.restore();
-
-        if (stop) { return; }
       }
+    }
+    this.ctx.restore();
+  }
+
+  private drawLine(moveTo: boolean, from: Point, to: Point) {
+    if (moveTo) {
+      this.ctx.moveTo(from.x, from.y);
+    }
+    this.ctx.lineTo(to.x, to.y);
+
+    let goBack = false;
+    if (from.x < 0 || to.x < 0) {
+      goBack = true;
+      this.ctx.moveTo(from.x + STEPS_PER_REV, from.y);
+      this.ctx.lineTo(to.x + STEPS_PER_REV, to.y);
+    }
+    if (from.x >= STEPS_PER_REV || to.x >= STEPS_PER_REV) {
+      goBack = true;
+      this.ctx.moveTo(from.x - STEPS_PER_REV, from.y);
+      this.ctx.lineTo(to.x - STEPS_PER_REV, to.y);
+    }
+
+    if (goBack) {
+      this.ctx.moveTo(to.x, to.y);
     }
   }
 

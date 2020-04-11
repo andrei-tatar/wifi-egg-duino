@@ -1,12 +1,13 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { ApiService, PrintFile } from '../shared/api.service';
-import { map, shareReplay, distinctUntilChanged, takeUntil } from 'rxjs/operators';
-import { Observable, Subject } from 'rxjs';
+import { map, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { Observable, Subject, concat, defer, EMPTY, race } from 'rxjs';
 import { Layer } from '../utils';
 import { CodeConverter } from '../shared/code-convert';
 import { ActivatedRoute, Router } from '@angular/router';
 import { collapse } from '../animations';
 import { WebSocketService } from '../shared/ws.service';
+import { PresentationService, Cancel as CANCEL } from '../shared/presentation.service';
 
 @Component({
   selector: 'app-print',
@@ -42,6 +43,7 @@ export class PrintComponent implements OnInit, OnDestroy {
     private ws: WebSocketService,
     private router: Router,
     private route: ActivatedRoute,
+    private presentationService: PresentationService,
   ) {
   }
 
@@ -63,7 +65,35 @@ export class PrintComponent implements OnInit, OnDestroy {
   }
 
   async deleteFile(file: PrintFileModel) {
-    await this.apiService.deleteFile(file.name).toPromise();
+    try {
+      await concat(
+        this.presentationService
+          .showConfirmation({
+            title: 'Please confirm',
+            message: `Are you sure you want to delete '${file.name}'?`
+          }),
+        race(
+          this.apiService.deleteFile(file.name),
+          this.presentationService.globalLoader,
+        ),
+        defer(() => {
+          this.presentationService.showToast('File deleted');
+          return EMPTY;
+        }),
+      ).pipe(
+        takeUntil(this.destroy$)
+      ).toPromise();
+
+    } catch (err) {
+      if (err !== CANCEL) {
+        await this.presentationService
+          .showInformation({
+            title: 'Error',
+            message: `Could not delete the file\n${err.message}`,
+          })
+          .toPromise();
+      }
+    }
   }
 
   selectFile(file: PrintFileModel) {
@@ -82,7 +112,6 @@ export class PrintComponent implements OnInit, OnDestroy {
   private loadLayers(file: PrintFile) {
     return this.apiService.loadFile(file.name).pipe(
       map(code => this.codeConverter.codeToLayers(code)),
-      shareReplay(1), // cache in memory
     );
   }
 }

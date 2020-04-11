@@ -4,9 +4,10 @@ import {
     ignoreElements, switchMap, scan, catchError,
     shareReplay, distinctUntilChanged, skip, map, debounce
 } from 'rxjs/operators';
-import { Subject, concat, defer, EMPTY, of, merge, timer } from 'rxjs';
+import { Subject, concat, defer, EMPTY, of, merge, timer, race } from 'rxjs';
 import { propsEqual, cache } from '../utils';
 import { LayerResolveType } from '../create/services/svg-segmenter';
+import { PresentationService } from './presentation.service';
 
 const DEFAULT_CONFIG: Config = {
     hScale: 1,
@@ -44,7 +45,10 @@ export class ApiService {
 
     readonly config$ = merge(this.configInternal, this.saveConfig$).pipe(shareReplay(1));
 
-    readonly files$ = this.client.get<PrintFile[]>('api/files').pipe(
+    readonly files$ = race(
+        this.client.get<PrintFile[]>('api/files'),
+        this.presentationService.globalLoader,
+    ).pipe(
         switchMap(files => concat(
             of(files),
             this.events$.pipe(
@@ -66,7 +70,8 @@ export class ApiService {
     readonly motionParams$ = this.client.get<MotionParams>('api/motion');
 
     constructor(
-        private client: HttpClient
+        private client: HttpClient,
+        private presentationService: PresentationService,
     ) {
     }
 
@@ -82,10 +87,13 @@ export class ApiService {
     }
 
     loadFile(name: string) {
-        return this.client.get('api/file/' + name, {
-            responseType: 'text'
-        }).pipe(
-            cache(`file:${name}`),
+        return race(
+            this.client.get('api/file/' + name, {
+                responseType: 'text'
+            }).pipe(
+                cache(`file:${name}`),
+            ),
+            this.presentationService.globalLoader
         );
     }
 
