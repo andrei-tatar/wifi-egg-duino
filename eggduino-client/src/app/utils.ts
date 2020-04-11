@@ -1,3 +1,6 @@
+import { MonoTypeOperatorFunction, Observable } from 'rxjs';
+import { tap, finalize, publishReplay, refCount } from 'rxjs/operators';
+
 export const STEPS_PER_REV = 6400;
 export const HOME: Point = { x: 0, y: 0 };
 
@@ -63,4 +66,34 @@ export function propsEqual<T>(a: T, b: T) {
 
 export function distanceBetweenPoints(p1: Point, p2: Point) {
     return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+}
+
+const cacheTemp = new Map<string, Observable<string>>();
+
+export function cache(key: string): MonoTypeOperatorFunction<string> {
+    return source => new Observable<string>(observer => {
+        const cached = cacheTemp.get(key);
+        if (cached) {
+            return cached.subscribe(observer);
+        }
+
+        const value = sessionStorage.getItem(key);
+        if (value != null) {
+            observer.next(value);
+            observer.complete();
+        } else {
+            const add = source.pipe(
+                publishReplay(1),
+                refCount(),
+                tap(v => {
+                    sessionStorage.setItem(key, v);
+                }),
+                finalize(() => {
+                    cacheTemp.delete(key);
+                })
+            );
+            cacheTemp.set(key, add);
+            return add.subscribe(observer);
+        }
+    });
 }

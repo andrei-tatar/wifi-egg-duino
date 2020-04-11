@@ -5,7 +5,7 @@ import {
     shareReplay, distinctUntilChanged, skip, map, debounce
 } from 'rxjs/operators';
 import { Subject, concat, defer, EMPTY, of, merge, timer } from 'rxjs';
-import { propsEqual } from '../utils';
+import { propsEqual, cache } from '../utils';
 import { LayerResolveType } from '../create/services/svg-segmenter';
 
 const DEFAULT_CONFIG: Config = {
@@ -84,7 +84,9 @@ export class ApiService {
     loadFile(name: string) {
         return this.client.get('api/file/' + name, {
             responseType: 'text'
-        });
+        }).pipe(
+            cache(`file:${name}`),
+        );
     }
 
     deleteFile(name: string) {
