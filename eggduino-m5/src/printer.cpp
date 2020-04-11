@@ -50,7 +50,7 @@ void Printer::stop()
 
     if (xTaskGetCurrentTaskHandle() != handle)
     {
-        //if we stop from outside the print task, 
+        //if we stop from outside the print task,
         //stop first, close file 2nd
         vTaskDelete(handle);
         handle = NULL;
@@ -77,6 +77,8 @@ void Printer::print(fs::File file)
     stop();
 
     printing = new File(file);
+    mPen.setCurrentPosition(0);
+    mRotation.setCurrentPosition(0);
     xTaskCreatePinnedToCore(printTaskHandler, "Print", 8000, this, TASK_PRIORITY, &printTaskHandle, 0);
 }
 

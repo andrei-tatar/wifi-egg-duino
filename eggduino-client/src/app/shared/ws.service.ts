@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { switchMap, retryWhen, delay, scan, shareReplay } from 'rxjs/operators';
+import { Observable, interval, merge } from 'rxjs';
+import { switchMap, retryWhen, delay, scan, shareReplay, debounceTime, tap, ignoreElements, filter, timeout, map, refCount, publish } from 'rxjs/operators';
 
 @Injectable()
 export class WebSocketService {
@@ -11,27 +11,45 @@ export class WebSocketService {
         ws.onclose = () => observer.complete();
         ws.onerror = err => observer.error(err);
         return () => ws.close();
-    }).pipe(
-        retryWhen(err => err.pipe(delay(1000))),
-    );
+    });
 
     readonly messages$ = this.ws$.pipe(
-        switchMap(ws => new Observable<WsMessage>(observer => {
-            ws.onmessage = event => {
-                try {
-                    const parsed: WsMessage = JSON.parse(event.data);
-                    observer.next(parsed);
-                } catch (err) {
-                    console.warn('unable to parse ws message', err);
-                }
-            };
-        }))
+        switchMap(ws => {
+            const msgs$ = new Observable<any>(observer => {
+                ws.onmessage = event => observer.next(event.data);
+            }).pipe(
+                publish(),
+                refCount(),
+            );
+            const ping$ = interval(1500).pipe(tap(_ => ws.send('__ping__')), ignoreElements());
+            const pong$ = msgs$.pipe(
+                filter(m => m === '__pong__'),
+                timeout(2000),
+                ignoreElements(),
+            );
+            return merge(msgs$, ping$, pong$).pipe(
+                filter(m => m !== '__pong__'),
+                map(msg => {
+                    try {
+                        const parsed: WsMessage = JSON.parse(msg);
+                        return parsed;
+                    } catch (err) {
+                        console.warn('unable to parse ws message', err);
+                        return null;
+                    }
+                }),
+                filter(msg => msg != null),
+            );
+        }),
+        retryWhen(err$ => err$.pipe(
+            tap(err => console.warn('ws error; reconnecting', err)),
+            delay(500),
+        )),
     );
 
     readonly status$ = this.messages$.pipe(
         scan((ctx, msg) => {
             ctx = { ...ctx, ...msg };
-            console.log(ctx);
             return ctx;
         }, {
             progress: 0,
@@ -44,6 +62,7 @@ export class WebSocketService {
             waitingFor: string;
             status: 'paused' | 'printing' | 'stopped';
         }),
+        debounceTime(0),
         shareReplay(1),
     );
 }

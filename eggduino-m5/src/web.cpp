@@ -226,6 +226,13 @@ void Web::begin()
         {
             client->text(getStatusJson());
         }
+        else if (type == WS_EVT_DATA)
+        {
+            if (len == 8 && strncmp("__ping__", (const char *)data, 8) == 0)
+            {
+                client->text("__pong__");
+            }
+        }
     });
 
     _server.begin();
