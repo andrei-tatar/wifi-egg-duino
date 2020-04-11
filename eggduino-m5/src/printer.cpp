@@ -132,7 +132,9 @@ void Printer::printTask()
         }
         else if (buffer[0] == 'T')
         {
-            moveTo(atol(&buffer[2]), atol(strchr(&buffer[2], ' ')));
+            long x = roundf((float)atof(&buffer[2]) / 360.0f * parameters.stepsPerRotation);
+            long y = roundf((float)atof(strchr(&buffer[2], ' ')) / 360.0f * parameters.stepsPerRotation);
+            moveTo(x, y);
         }
 
         uint32_t now = millis();

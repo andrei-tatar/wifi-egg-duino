@@ -1,5 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
 
+// Import library functions for theme creation.
+@import "colors";
+
+@include mat-core();
+@include angular-material-theme($theme);
+
 html,
 body {
     height: 100%;

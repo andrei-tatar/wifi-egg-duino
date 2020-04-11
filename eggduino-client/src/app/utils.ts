@@ -1,7 +1,7 @@
 import { MonoTypeOperatorFunction, Observable } from 'rxjs';
 import { tap, finalize, publishReplay, refCount } from 'rxjs/operators';
 
-export const STEPS_PER_REV = 6400;
+export const STEPS_PER_REV = 360; // all coordinates are in degrees
 export const HOME: Point = { x: 0, y: 0 };
 
 export const DEFAULT_LAYER_COLORS = [

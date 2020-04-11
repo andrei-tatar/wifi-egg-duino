@@ -133,19 +133,23 @@ export class CreateComponent implements OnInit, OnDestroy {
         hScale, vScale, vOffset,
         simplifySegments, simplifyThreshold,
         optimizeTravel, reverseSegments,
+        mergeSegments, minTravelDistance,
       }]) => {
         const transformed = clone(layers);
 
         this.transforms.scaleLayers(transformed, hScale, vScale, vOffset);
-        this.transforms.roundPoints(transformed);
+
+        if (optimizeTravel) {
+          this.transforms.optimizeTravel(transformed, reverseSegments);
+        }
+
+        if (mergeSegments) {
+          this.transforms.mergeConsecutiveSegments(transformed, minTravelDistance);
+        }
 
         if (simplifySegments) {
           this.transforms.simplifySegments(transformed, simplifyThreshold);
         }
-        if (optimizeTravel) {
-          this.transforms.optimizeTravel(transformed, reverseSegments);
-        }
-        this.transforms.mergeConsecutiveSegments(transformed);
 
         const stats = this.transforms.getImprovements(layers, transformed);
         return { layers: transformed, stats };

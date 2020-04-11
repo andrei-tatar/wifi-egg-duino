@@ -36,11 +36,11 @@ export class CodeConverter {
 
             for (const segment of layer.segments) {
                 const firstPoint = segment.points[0];
-                instructions.push(`${Commands.Move} ${firstPoint.x} ${firstPoint.y}`);
+                instructions.push(`${Commands.Move} ${this.roundToDecimals(firstPoint.x)} ${this.roundToDecimals(firstPoint.y)}`);
                 instructions.push(Commands.PenDown);
                 reportProgress(firstPoint);
                 for (const point of segment.points.slice(1)) {
-                    instructions.push(`${Commands.Move} ${point.x} ${point.y}`);
+                    instructions.push(`${Commands.Move} ${this.roundToDecimals(point.x)} ${this.roundToDecimals(point.y)}`);
                     reportProgress(point);
                 }
                 instructions.push(Commands.PenUp);
@@ -91,8 +91,8 @@ export class CodeConverter {
                 case Commands.Move:
                     const segments = layer?.segments;
                     const p: Point = {
-                        x: parseInt(args[0], 10),
-                        y: parseInt(args[1], 10),
+                        x: parseFloat(args[0]),
+                        y: parseFloat(args[1]),
                         srcLineNumber: index,
                     };
                     if (penDown) {
@@ -113,6 +113,11 @@ export class CodeConverter {
         }
 
         return layers;
+    }
+
+    private roundToDecimals(n: number, decimals = 2) {
+        const power = Math.pow(10, decimals);
+        return Math.round(n * power) / power;
     }
 }
 

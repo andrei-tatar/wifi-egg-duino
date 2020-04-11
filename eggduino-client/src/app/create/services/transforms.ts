@@ -87,18 +87,7 @@ export class TransformsService {
         }
     }
 
-    roundPoints(layers: Layer[]) {
-        for (const layer of layers) {
-            for (const segment of layer.segments) {
-                for (const point of segment.points) {
-                    point.x = Math.round(point.x);
-                    point.y = Math.round(point.y);
-                }
-            }
-        }
-    }
-
-    mergeConsecutiveSegments(layers: Layer[]) {
+    mergeConsecutiveSegments(layers: Layer[], minDistance: number) {
         for (const layer of layers) {
             let start = 0;
             while (start < layer.segments.length - 1) {
@@ -109,7 +98,7 @@ export class TransformsService {
                 const nextStart = next.points[0];
 
                 const distance = distanceBetweenPoints(currentEnd, nextStart);
-                if (distance < 2) {
+                if (distance < minDistance) {
                     current.points.push(...next.points.slice(1));
                     layer.segments.splice(start + 1, 1);
                 } else {

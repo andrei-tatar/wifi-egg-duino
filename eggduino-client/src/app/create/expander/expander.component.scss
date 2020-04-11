@@ -1,0 +1,48 @@
+@import "../../../colors";
+
+$bar: map-get($theme, primary);
+$acc: map-get($theme, accent);
+
+:host {
+    display: flex;
+    flex-direction: column;
+    border-left: 2px solid mat-color($acc, A400);
+}
+
+.title {
+    padding-left: 8px;
+    cursor: pointer;
+    font-weight: 400;
+    font-size: 1.1em;
+    line-height: 2;
+    position: relative;
+    color: mat-color($bar, "default-contrast");
+    background-color: mat-color($bar);
+
+    &:before {
+        content: "";
+        display: block;
+        border-left: 2px solid mat-color($bar, "default-contrast");
+        border-top: 2px solid mat-color($bar, "default-contrast");
+        width: 8px;
+        height: 8px;
+        right: 10px;
+        position: absolute;
+        top: calc(50% - 1px);
+        transform: rotate(-45deg);
+        transition: transform 0.3s;
+        transform-origin: 2px 2px;
+    }
+
+    &.expanded {
+        &:before {
+            transform: rotate(-135deg);
+        }
+    }
+}
+
+.content {
+    padding-left: 8px;
+    display: flex;
+    flex-direction: column;
+}

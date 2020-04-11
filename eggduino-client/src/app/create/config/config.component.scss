@@ -4,19 +4,30 @@
 }
 
 .mat-checkbox {
+    &:first-child {
+        margin-top: 8px;
+    }
     margin-bottom: 8px;
 }
 
 .grid-container {
     display: grid;
-    grid-template-columns: 1.2fr 2fr .7fr;
+    grid-template-columns: 1.2fr 2fr 0.7fr;
 
     > mat-label {
         align-self: center;
     }
 }
 
+app-expander {
+    margin-bottom: 8px;
+}
+
 mb {
     margin-bottom: 10px;
 }
 
+.details {
+    font-weight: 100;
+    font-size: 0.8em;
+}

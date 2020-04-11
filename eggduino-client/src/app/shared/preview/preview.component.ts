@@ -152,7 +152,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     this.clearDrawing();
     if (!this.layersInternal) { return; }
 
-    let last = HOME;
     let found = false;
 
     this.ctx.save();
@@ -160,21 +159,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       this.ctx.strokeStyle = this.getLayerColor(layer);
 
       for (const segment of layer.segments) {
-
-        if (this.showTravel) {
-          this.ctx.beginPath();
-
-          this.drawLine(true, last, segment.points[0]);
-          last = segment.points[segment.points.length - 1];
-
-          this.ctx.save();
-          this.ctx.lineWidth = this.ctx.lineWidth / 2;
-          this.ctx.strokeStyle = 'lightgreen';
-          this.ctx.resetTransform();
-          this.ctx.stroke();
-          this.ctx.restore();
-        }
-
         this.ctx.beginPath();
 
         let moveTo = true;
@@ -201,6 +185,29 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         this.ctx.restore();
       }
     }
+
+    if (this.showTravel) {
+      this.ctx.save();
+      this.ctx.lineWidth = this.ctx.lineWidth / 2;
+      this.ctx.strokeStyle = 'lightgreen';
+
+      let last = HOME;
+      for (const layer of this.layersInternal) {
+        for (const segment of layer.segments) {
+          this.ctx.beginPath();
+          this.drawLine(true, last, segment.points[0]);
+          last = segment.points[segment.points.length - 1];
+
+          this.ctx.save();
+          this.ctx.resetTransform();
+          this.ctx.stroke(); // prevent scaling the line width
+          this.ctx.restore();
+        }
+      }
+
+      this.ctx.restore();
+    }
+
     this.ctx.restore();
   }
 

@@ -1,0 +1,6 @@
+<div class="title" [class.expanded]="expanded" (click)="expanded=!expanded">
+    <ng-content select="[expander-title]"></ng-content>
+</div>
+<div class="content" @collapse *ngIf="expanded">
+    <ng-content></ng-content>
+</div>

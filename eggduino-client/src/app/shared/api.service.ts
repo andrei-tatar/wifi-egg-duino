@@ -13,11 +13,17 @@ const DEFAULT_CONFIG: Config = {
     hScale: 1,
     vScale: 1,
     vOffset: 0,
+
     optimizeTravel: true,
     reverseSegments: true,
+
     simplifySegments: true,
-    simplifyThreshold: .6,
+    simplifyThreshold: .04,
+
     layerResolveType: 'none',
+
+    mergeSegments: true,
+    minTravelDistance: .11,
 };
 
 @Injectable()
@@ -31,7 +37,10 @@ export class ApiService {
     private configInternal = concat(
         this.client.get<Config>('api/config').pipe(catchError(_ => of(DEFAULT_CONFIG))),
         this.updateConfig$,
-    ).pipe(shareReplay(1));
+    ).pipe(
+        map(config => ({ ...DEFAULT_CONFIG, ...config })),
+        shareReplay(1),
+    );
 
     private saveConfig$ = this.configInternal.pipe(
         map((value, index) => ({ value, index })),
@@ -170,6 +179,8 @@ export interface Config {
     simplifySegments: boolean;
     optimizeTravel: boolean;
     reverseSegments: boolean;
+    mergeSegments: boolean;
     simplifyThreshold: number;
+    minTravelDistance: number;
     layerResolveType: LayerResolveType;
 }

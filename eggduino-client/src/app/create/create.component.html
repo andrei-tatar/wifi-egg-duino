@@ -8,31 +8,30 @@
         </mat-card-title>
         <mat-card-content class="content-container">
             <div class="options-container">
-                <mat-form-field>
-                    <mat-label>Layers</mat-label>
-                    <mat-select [value]="layerResolverType$|async" (valueChange)="updateLayerResolveType($event)">
-                        <mat-option value="none">None</mat-option>
-                        <mat-option value="color">By Color</mat-option>
-                        <mat-option value="inkscape">By Inkscape</mat-option>
-                    </mat-select>
-                </mat-form-field>
-                <div *ngIf="layers?.length>1" cdkDropList class="layer-list" (cdkDropListDropped)="moveLayer($event)">
-                    <div class="layer-item" *ngFor="let layer of layers trackBy trackLayer" cdkDrag>
-                        <input [value]="layer.description" (input)="updateLayerDescription(layer, $event.target.value)">
-                        <mat-checkbox [checked]="layer.visible" (change)="toggleVisibility(layer)">
-                        </mat-checkbox>
+                <app-expander>
+                    <span expander-title>Layers</span>
+                    <mat-form-field class="mt-1">
+                        <mat-label>Resolve Type</mat-label>
+                        <mat-select [value]="layerResolverType$|async" (valueChange)="updateLayerResolveType($event)">
+                            <mat-option value="none">None</mat-option>
+                            <mat-option value="color">By Color</mat-option>
+                            <mat-option value="inkscape">By Inkscape</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    <div *ngIf="layers?.length>1" cdkDropList class="layer-list"
+                        (cdkDropListDropped)="moveLayer($event)">
+                        <div class="layer-item" *ngFor="let layer of layers trackBy trackLayer" cdkDrag>
+                            <input [value]="layer.description"
+                                (input)="updateLayerDescription(layer, $event.target.value)">
+                            <mat-checkbox [checked]="layer.visible" (change)="toggleVisibility(layer)">
+                            </mat-checkbox>
+                        </div>
                     </div>
-                </div>
+                </app-expander>
 
-                <app-config></app-config>
-
-                <span>
-                    Points: <b>{{stats?.points|percent}}</b>,
-                    Travel: <b>{{stats?.travel|percent}}</b>,
-                    Seg: <b>{{stats?.segments|percent}}</b>
-                </span>
+                <app-config [stats]="stats"></app-config>
             </div>
-            <app-preview [layers]="visibleLayers"></app-preview>
+            <app-preview [layers]="visibleLayers" [showTravel]="true"></app-preview>
         </mat-card-content>
         <mat-card-actions>
             <button mat-raised-button color="primary" [disabled]="!name.innerText" (click)="save()">Save and go to

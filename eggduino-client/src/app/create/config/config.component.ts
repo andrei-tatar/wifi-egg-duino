@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Input } from '@angular/core';
 import { first } from 'rxjs/operators';
 import { Config, ApiService } from 'src/app/shared/api.service';
 
@@ -6,10 +6,13 @@ import { Config, ApiService } from 'src/app/shared/api.service';
   selector: 'app-config',
   templateUrl: './config.component.html',
   styleUrls: ['./config.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfigComponent {
   readonly config$ = this.api.config$;
+
+  @Input()
+  stats: any;
 
   constructor(
     private api: ApiService,
