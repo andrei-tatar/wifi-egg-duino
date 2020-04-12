@@ -72,10 +72,7 @@ export class PrintComponent implements OnInit, OnDestroy {
             title: 'Please confirm',
             message: `Are you sure you want to delete '${file.name}'?`
           }),
-        race(
-          this.apiService.deleteFile(file.name),
-          this.presentationService.globalLoader,
-        ),
+        this.apiService.deleteFile(file.name),
         defer(() => {
           this.presentationService.showToast('File deleted');
           return EMPTY;
@@ -107,6 +104,26 @@ export class PrintComponent implements OnInit, OnDestroy {
 
   async printFile(file: PrintFile) {
     await this.apiService.printFile(file.name).toPromise();
+  }
+
+  trackFile(_: number, file: PrintFile) {
+    return file.name;
+  }
+
+  uploadFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (file) {
+        this.router.navigate(['/create'], {
+          state: {
+            file,
+          },
+        });
+      }
+    });
+    input.click();
   }
 
   private loadLayers(file: PrintFile) {

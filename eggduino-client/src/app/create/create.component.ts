@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { SvgSegmenter, LayerResolveType } from './services/svg-segmenter';
-import { combineLatest, Subject, concat, of, race } from 'rxjs';
+import { combineLatest, Subject, concat, of, race, ReplaySubject } from 'rxjs';
 import { debounceTime, switchMap, takeUntil, map, retryWhen, tap, distinctUntilChanged, first } from 'rxjs/operators';
 import { Layer, clone, removeExtension, blobToText, blobToDataUrl, propsEqual, STEPS_PER_REV } from '../utils';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -8,7 +8,7 @@ import { TransformsService } from './services/transforms';
 import { CodeConverter as CodeConverter } from '../shared/code-convert';
 import { ApiService } from '../shared/api.service';
 import { PresentationService } from '../shared/presentation.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ImageTracer } from './services/image-tracer';
 
 @Component({
@@ -18,7 +18,6 @@ import { ImageTracer } from './services/image-tracer';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreateComponent implements OnInit, OnDestroy {
-  private file$ = new Subject<File>();
   private destroy$ = new Subject();
   private updateLayer$ = new Subject<
     { type: 'visible', id: string, visible: boolean } |
@@ -26,6 +25,7 @@ export class CreateComponent implements OnInit, OnDestroy {
     { type: 'move', from: number, to: number }
   >();
 
+  file: File;
   layerResolverType$ = this.apiService.config$.pipe(map(c => c.layerResolveType), distinctUntilChanged());
   visibleLayers: LayerModel[];
   layers: LayerModel[];
@@ -42,26 +42,23 @@ export class CreateComponent implements OnInit, OnDestroy {
     private presentationService: PresentationService,
     private router: Router,
   ) {
-  }
+    this.file = this.router.getCurrentNavigation().extras?.state?.file;
 
-  async uploadedFiles(files: FileList) {
-    const file = files[0];
-    if (!file) { return; }
-
-    this.file$.next(file);
   }
 
   ngOnInit() {
-    const allLayers$ = combineLatest([
-      this.file$,
-      this.layerResolverType$.pipe(debounceTime(200))
-    ]).pipe(
-      switchMap(async ([file, resolveType]) => {
+    if (!this.file) {
+      return;
+    }
+
+
+    const allLayers$ = this.layerResolverType$.pipe(debounceTime(200)).pipe(
+      switchMap(async resolveType => {
         let svgText: string;
-        if (file.type === 'image/svg+xml') {
-          svgText = await blobToText(file);
+        if (this.file.type === 'image/svg+xml') {
+          svgText = await blobToText(this.file);
         } else {
-          const dataUrl = await blobToDataUrl(file);
+          const dataUrl = await blobToDataUrl(this.file);
           svgText = await new Promise(resolve => {
             const tracer = new ImageTracer();
             tracer.imageToSVG(dataUrl, svgstr => resolve(svgstr), 'posterized3');
@@ -71,7 +68,7 @@ export class CreateComponent implements OnInit, OnDestroy {
         const { layers, width, height } = this.svg.segment(svgText, resolveType);
         const scale = Math.min(STEPS_PER_REV / width, STEPS_PER_REV / 2 / height);
         this.transforms.scaleLayers(layers, scale, scale, -height * scale / 2, false);
-        this.name.nativeElement.innerText = removeExtension(file.name);
+        this.name.nativeElement.innerText = removeExtension(this.file.name);
         return layers;
       }),
       retryWhen(err$ => err$.pipe(tap(err => {
@@ -196,31 +193,33 @@ export class CreateComponent implements OnInit, OnDestroy {
     return layer.id;
   }
 
-  async save(redirect = true) {
+  async save() {
     try {
       const code = this.codeConverter.layersToCode(this.visibleLayers);
       const name = this.name.nativeElement.innerText;
 
-      await race(
-        this.apiService.uploadFile(name, code),
-        this.presentationService.globalLoader,
-      ).toPromise();
+      await this.apiService.uploadFile(name, code).toPromise();
 
       this.presentationService.showToast('Saved OK');
 
-      if (redirect) {
-        this.router.navigate(['print'], {
-          queryParams: {
-            select: name,
-          }
-        });
-      }
+      await this.router.navigate(['print'], {
+        queryParams: {
+          select: name,
+        }
+      });
     } catch (error) {
       this.presentationService
-        .showInformation({ title: 'Error', message: `Error during save. Possible duplicate filename.\n${error.message}` })
+        .showInformation({
+          title: 'Error',
+          message: `Error during save. Possible duplicate filename.\n${error.message}`
+        })
         .toPromise();
       this.name.nativeElement.focus();
     }
+  }
+
+  cancel() {
+    this.router.navigate(['print']);
   }
 
   async updateLayerResolveType(layerResolveType: LayerResolveType) {

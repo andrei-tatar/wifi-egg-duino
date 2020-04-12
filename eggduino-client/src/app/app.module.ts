@@ -5,6 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AppComponent } from './app.component';
 import { SharedModule } from './shared/shared.module';
+import { PrintingGuard } from './shared/printing.guard';
 
 @NgModule({
   declarations: [
@@ -15,9 +16,17 @@ import { SharedModule } from './shared/shared.module';
     BrowserModule,
     BrowserAnimationsModule,
     RouterModule.forRoot([
-      { path: 'print', loadChildren: () => import('./print/print.module').then(m => m.PrintModule) },
-      { path: 'create', loadChildren: () => import('./create/create.module').then(m => m.CreateModule) },
-      { path: 'setup', loadChildren: () => import('./setup/setup.module').then(m => m.SetupModule) },
+      {
+        path: 'print', loadChildren: () => import('./print/print.module').then(m => m.PrintModule)
+      },
+      {
+        path: 'create', loadChildren: () => import('./create/create.module').then(m => m.CreateModule),
+        canActivate: [PrintingGuard]
+      },
+      {
+        path: 'setup', loadChildren: () => import('./setup/setup.module').then(m => m.SetupModule),
+        canActivate: [PrintingGuard]
+      },
       { path: '**', redirectTo: 'print' },
     ]),
   ],

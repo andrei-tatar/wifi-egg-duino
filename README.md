@@ -16,6 +16,7 @@ Remaining things for a first release:
 - [ ] OTA - easier firmware update (removing dependencies for platformio or other tools after the first flash)
 
 Lower priority:
+- [ ] Move image processing in web worker
 - [ ] Make project compatible with generic ESP32 boards
 
 

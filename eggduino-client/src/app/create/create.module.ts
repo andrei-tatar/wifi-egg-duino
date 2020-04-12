@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { DragDropModule } from '@angular/cdk/drag-drop';
-import { MatExpansionModule } from '@angular/material/expansion';
 
 import { CreateComponent } from './create.component';
 import { SharedModule } from '../shared/shared.module';
@@ -17,7 +16,6 @@ const routes: Routes = [
 @NgModule({
   declarations: [CreateComponent, ConfigComponent],
   imports: [
-    MatExpansionModule,
     SharedModule,
     RouterModule.forChild(routes),
     DragDropModule,

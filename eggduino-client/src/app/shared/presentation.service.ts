@@ -36,7 +36,7 @@ export class PresentationService {
 
     showConfirmation({ title, message, okMessage = 'Yes', noMessage = 'No', disableClose }:
         { title: string, message: string, okMessage?: string, noMessage?: string, disableClose?: boolean }) {
-        return new Observable(observer => {
+        return new Observable<string>(observer => {
             const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
                 maxWidth: '400px',
                 disableClose,

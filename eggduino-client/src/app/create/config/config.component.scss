@@ -4,15 +4,15 @@
 }
 
 .mat-checkbox {
-    &:first-child {
-        margin-top: 8px;
+    &:not(:first-child) {
+        margin-top: 16px;
     }
     margin-bottom: 8px;
 }
 
 .grid-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr auto;
     align-items: center;
 
     mat-slider {
@@ -20,15 +20,12 @@
     }
 }
 
-app-expander {
-    margin-bottom: 8px;
-}
-
-mb {
-    margin-bottom: 10px;
-}
-
 .details {
     font-weight: 100;
     font-size: 0.8em;
+}
+
+.flex-column {
+    display: flex;
+    flex-direction: column;
 }

@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, ElementRef, OnInit, ChangeDetectionStrategy, AfterViewInit } from '@angular/core';
+import { Component, Input, OnDestroy, ElementRef, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import {
   Scene, Mesh, WebGLRenderer, Texture, MathUtils, GridHelper,
@@ -17,7 +17,7 @@ import { createGui, createGeometry } from './options';
   styles: [':host{display:block;height: 360px;position:relative;}'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PreviewComponent implements AfterViewInit, OnDestroy {
+export class PreviewComponent implements OnInit, OnDestroy {
   private ctx: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement;
   private animationTimer: number;
@@ -57,7 +57,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   ) {
   }
 
-  ngAfterViewInit() {
+  ngOnInit() {
     const mesh = this.createMesh();
     const camera = new PerspectiveCamera(40, 1, 0.01, 10);
     camera.position.x = -3;

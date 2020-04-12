@@ -87,11 +87,14 @@ export class ApiService {
     uploadFile(name: string, content: string) {
         const params: FormData = new FormData();
         params.append('data', new Blob([content], { type: 'text/plain' }), name);
-        return concat(
-            this.client.post('api/file', params),
-            defer(() => {
-                this.events$.next({ type: 'create', name });
-            }),
+        return race(
+            concat(
+                this.client.post('api/file', params),
+                defer(() => {
+                    this.events$.next({ type: 'create', name });
+                }),
+            ),
+            this.presentationService.globalLoader,
         ).pipe(ignoreElements());
     }
 
@@ -107,20 +110,26 @@ export class ApiService {
     }
 
     deleteFile(name: string) {
-        return concat(
-            this.client.delete('api/file/' + name, {
-                responseType: 'text',
-            }),
-            defer(() => {
-                this.events$.next({ type: 'delete', name });
-                sessionStorage.removeItem(this.getCacheKey(name));
-                return EMPTY;
-            }),
+        return race(
+            concat(
+                this.client.delete('api/file/' + name, {
+                    responseType: 'text',
+                }),
+                defer(() => {
+                    this.events$.next({ type: 'delete', name });
+                    sessionStorage.removeItem(this.getCacheKey(name));
+                    return EMPTY;
+                }),
+            ),
+            this.presentationService.globalLoader
         ).pipe(ignoreElements());
     }
 
     printFile(name: string) {
-        return this.client.post('api/print/' + name, '', { responseType: 'text' });
+        return race(
+            this.client.post('api/print/' + name, '', { responseType: 'text' }),
+            this.presentationService.globalLoader
+        );
     }
 
 
@@ -129,12 +138,15 @@ export class ApiService {
     }
 
     sendCommand(cmd: MotionCommand) {
-        return this.client.post(
-            'api/command',
-            `command=${cmd}`,
-            {
-                headers: new HttpHeaders().append('Content-Type', 'application/x-www-form-urlencoded'),
-            }
+        return race(
+            this.client.post(
+                'api/command',
+                `command=${cmd}`,
+                {
+                    headers: new HttpHeaders().append('Content-Type', 'application/x-www-form-urlencoded'),
+                }
+            ),
+            this.presentationService.globalLoader,
         ).pipe(ignoreElements());
     }
 
@@ -143,10 +155,13 @@ export class ApiService {
         for (const [key, value] of Object.entries(params)) {
             url.append(key, `${value}`);
         }
-        return this.client.patch('api/motion', url.toString(), {
-            responseType: 'text',
-            headers: new HttpHeaders().append('Content-Type', 'application/x-www-form-urlencoded'),
-        }).pipe(ignoreElements());
+        return race(
+            this.client.patch('api/motion', url.toString(), {
+                responseType: 'text',
+                headers: new HttpHeaders().append('Content-Type', 'application/x-www-form-urlencoded'),
+            }),
+            this.presentationService.globalLoader,
+        ).pipe(ignoreElements());
     }
 
     private getCacheKey(fileName: string) {

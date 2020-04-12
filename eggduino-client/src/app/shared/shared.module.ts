@@ -13,6 +13,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatListModule } from '@angular/material/list';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 import { PreviewComponent } from './preview/preview.component';
 import { ApiService } from './api.service';
@@ -31,12 +32,14 @@ import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-
     CommonModule, HttpClientModule, MatSnackBarModule, MatDialogModule,
     MatButtonModule, MatTabsModule, MatInputModule, MatToolbarModule, MatCardModule,
     MatCheckboxModule, MatSelectModule, MatSliderModule, MatListModule, MatProgressSpinnerModule,
+    MatExpansionModule,
   ],
   exports: [
     CommonModule,
     PreviewComponent,
     MatButtonModule, MatTabsModule, MatInputModule, MatToolbarModule, MatCardModule,
     MatCheckboxModule, MatSelectModule, MatSliderModule, MatListModule,
+    MatExpansionModule,
   ],
 })
 export class SharedModule {
