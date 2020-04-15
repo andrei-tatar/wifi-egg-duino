@@ -356,18 +356,29 @@ export class PathSegmenter {
     private parseNumbers(args: string): number[] {
         const numbers = [];
         let current = '';
+        let currentPoints = 0;
 
         function addCurrent() {
             const parsed = parseFloat(current.trim());
             if (!isNaN(parsed)) {
                 numbers.push(parsed);
             }
+            currentPoints = 0;
             current = '';
         }
 
         for (let i = 0; i < args.length; i++) {
             const prev = i > 1 ? args[i - 1] : '';
             const char = args[i];
+
+            if (char === '.') {
+                currentPoints++;
+
+                if (currentPoints === 2) {
+                    addCurrent();
+                    currentPoints = 1;
+                }
+            }
 
             if (char === '-' && prev !== 'e') {
                 addCurrent();
