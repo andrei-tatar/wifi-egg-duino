@@ -12,6 +12,29 @@ Web::Web(FS &fs, Printer &printer, String rootPath, uint16_t port)
 {
 }
 
+String statusToString(wl_status_t status)
+{
+    switch (status)
+    {
+    case WL_IDLE_STATUS:
+        return "idle";
+    case WL_NO_SSID_AVAIL:
+        return "no_network";
+    case WL_SCAN_COMPLETED:
+        return "scan_completed";
+    case WL_CONNECTED:
+        return "connected";
+    case WL_CONNECT_FAILED:
+        return "connect_failed";
+    case WL_CONNECTION_LOST:
+        return "connection_lost";
+    case WL_DISCONNECTED:
+        return "disconnected";
+    default:
+        return "unknown";
+    }
+}
+
 void Web::begin()
 {
     SPIFFS.begin();
@@ -36,6 +59,67 @@ void Web::begin()
         {
             req->send(404);
         }
+    });
+
+    _server.on("/api/wifi/scan", HTTP_GET, [this](AsyncWebServerRequest *req) {
+        auto count = WiFi.scanNetworks();
+        String json = "[";
+        for (auto i = 0; i < count; i++)
+        {
+            char network[150];
+            snprintf(network, sizeof(network), "{\"ssid\":\"%s\",\"encryptionType\":%d,\"rssi\":%d,\"channel\":%d,\"bssid\":\"%s\"}%s",
+                     WiFi.SSID(i).c_str(), WiFi.encryptionType(i), WiFi.RSSI(i), WiFi.channel(i), WiFi.BSSIDstr(i).c_str(), i == count - 1 ? "" : ",");
+            json += network;
+        }
+        json += "]";
+        req->send(200, "application/json", json);
+    });
+
+    _server.on("/api/wifi/connect", HTTP_POST, [this](AsyncWebServerRequest *req) {
+        if (req->hasParam("ssid", true) && req->hasParam("password", true) && req->hasParam("bssid", true))
+        {
+            auto bssidStr = req->getParam("bssid", true)->value();
+            uint8_t bssid[6];
+            uint8_t length = std::min(18, (int)bssidStr.length());
+            for (auto i = 0; i < length; i += 3)
+            {
+                char msb = bssidStr[i], lsb = bssidStr[i + 1];
+                msb -= msb >= 'A' ? 'A' - 10 : '0';
+                lsb -= lsb >= 'A' ? 'A' - 10 : '0';
+                bssid[i / 3] = msb * 16 + lsb;
+            }
+
+            auto result = WiFi.begin(
+                req->getParam("ssid", true)->value().c_str(),
+                req->getParam("password", true)->value().c_str(),
+                0,
+                bssid);
+
+            if (result == WL_CONNECTED)
+            {
+                req->send(200);
+            }
+            else
+            {
+                char json[150];
+                snprintf(json, sizeof(json), "{\"error\": \"%s\"}", statusToString(result).c_str());
+                req->send(400, "application/json", json);
+            }
+        }
+        req->send(400);
+    });
+
+    _server.on("/api/wifi", HTTP_GET, [this](AsyncWebServerRequest *req) {
+        char json[500];
+        snprintf(json, sizeof(json), "{"
+                                     "\"status\":\"%s\","
+                                     "\"ssid\":\"%s\","
+                                     "\"bssid\":\"%s\""
+                                     "}",
+                 statusToString(WiFi.status()).c_str(),
+                 WiFi.SSID().c_str(),
+                 WiFi.BSSIDstr().c_str());
+        req->send(200, "application/json", json);
     });
 
     _server.on("/api/command", HTTP_POST, [this](AsyncWebServerRequest *req) {
@@ -103,24 +187,15 @@ void Web::begin()
     _server.on("/api/motion", HTTP_GET, [this](AsyncWebServerRequest *req) {
         MotionParameters params;
         _printer.getParameters(params);
-        String response = "{";
-        response += "\"penUpPercent\":";
-        response += params.penUpPercent;
-        response += ", \"penDownPercent\":";
-        response += params.penDownPercent;
-        response += ", \"drawingSpeed\":";
-        response += params.drawingSpeed;
-        response += ", \"penMoveDelay\":";
-        response += params.penMoveDelay;
-        response += ", \"travelSpeed\":";
-        response += params.travelSpeed;
-        response += ", \"stepsPerRotation\":";
-        response += params.stepsPerRotation;
-        response += ", \"reversePen\":";
-        response += params.reversePen ? "true" : "false";
-        response += ", \"reverseRotation\":";
-        response += params.reverseRotation ? "true" : "false";
-        response += "}";
+
+        char response[200];
+        snprintf(response, sizeof(response),
+                 "{\"penUpPercent\":%d,\"penDownPercent\":%d,\"drawingSpeed\":%d,\"penMoveDelay\":%d,"
+                 "\"travelSpeed\":%d,\"stepsPerRotation\":%d,\"reversePen\":%s,\"reverseRotation\":%s}",
+                 params.penUpPercent, params.penDownPercent, params.drawingSpeed, params.penMoveDelay,
+                 params.travelSpeed, params.stepsPerRotation,
+                 params.reversePen ? "true" : "false",
+                 params.reverseRotation ? "true" : "false");
 
         req->send(200, "application/json", response);
     });
@@ -129,7 +204,7 @@ void Web::begin()
         File dir = _fs.open(_rootPath);
         if (!dir || !dir.isDirectory())
         {
-            req->send(500, "text/json", "{\"error\":\"no_card\"}");
+            req->send(500, "application/json", "{\"error\":\"no_card\"}");
             return;
         }
 
@@ -151,7 +226,7 @@ void Web::begin()
             output += "\"}";
         }
         output += "]";
-        req->send(200, "text/json", output);
+        req->send(200, "application/json", output);
     });
 
     _server.on(
