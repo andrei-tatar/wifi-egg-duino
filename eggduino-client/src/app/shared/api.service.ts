@@ -76,7 +76,10 @@ export class ApiService {
         shareReplay(1),
     );
 
-    readonly motionParams$ = this.client.get<MotionParams>('api/motion');
+    readonly motionParams$ = race(
+        this.client.get<MotionParams>('api/motion'),
+        this.presentationService.globalLoader,
+    );
 
     constructor(
         private client: HttpClient,
@@ -164,6 +167,27 @@ export class ApiService {
         ).pipe(ignoreElements());
     }
 
+    wifiScan() {
+        return this.client.get<Network[]>('api/wifi/scan');
+    }
+
+    wifiStatus() {
+        return this.client.get<WiFiStatus>('api/wifi');
+    }
+
+    wifiConnect(params: { ssid: string, bssid: string, password: string }) {
+        const url = new URLSearchParams();
+        for (const [key, value] of Object.entries(params)) {
+            url.append(key, `${value}`);
+        }
+        return race(
+            this.client.patch('api/wifi/connect', url.toString(), {
+                headers: new HttpHeaders().append('Content-Type', 'application/x-www-form-urlencoded'),
+            }),
+            this.presentationService.globalLoader,
+        ).pipe(ignoreElements());
+    }
+
     private getCacheKey(fileName: string) {
         return `file:${fileName}`;
     }
@@ -171,6 +195,15 @@ export class ApiService {
 
 export type MotionCommand = 'pen-up' | 'pen-down' | 'motors-enable' | 'motors-disable' |
     'print-pause' | 'print-stop' | 'print-continue';
+
+export enum EncryptionType {
+    Open = 0,
+    Wep = 1,
+    WpaPsk = 2,
+    Wpa2Psk = 3,
+    WpaWpa2Psk = 4,
+    Wpa2Enterpries = 5,
+}
 
 export interface PrintFile {
     name: string;
@@ -198,4 +231,18 @@ export interface Config {
     simplifyThreshold: number;
     minTravelDistance: number;
     layerResolveType: LayerResolveType;
+}
+
+export interface Network {
+    ssid: string;
+    encryptionType: EncryptionType;
+    rssi: number;
+    channel: number;
+    bssid: string;
+}
+
+export interface WiFiStatus {
+    status: 'idle' | 'no_network' | 'scan_completed' | 'connected' | 'connect_failed' | 'connection_lost' | 'disconnected' | 'unknown';
+    ssid: string;
+    bssid: string;
 }

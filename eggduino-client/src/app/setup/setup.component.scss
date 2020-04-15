@@ -2,8 +2,13 @@
     padding: 0;
 }
 
-.mat-list-base {
+.font-bold {
+    font-weight: bold !important;
+}
+
+.network-list {
     padding: 0;
+    margin: 0 -24px -16px;
 }
 
 .expanded {
@@ -15,7 +20,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     column-gap: 10px;
-    
+
     .mat-button-base {
         margin-top: 10px;
     }

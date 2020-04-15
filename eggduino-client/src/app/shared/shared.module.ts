@@ -22,6 +22,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { PresentationService } from './presentation.service';
 import { WebSocketService } from './ws.service';
 import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
+import { MatIconModule } from '@angular/material/icon';
 
 @NgModule({
   declarations: [
@@ -32,14 +33,14 @@ import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-
     CommonModule, HttpClientModule, MatSnackBarModule, MatDialogModule,
     MatButtonModule, MatTabsModule, MatInputModule, MatToolbarModule, MatCardModule,
     MatCheckboxModule, MatSelectModule, MatSliderModule, MatListModule, MatProgressSpinnerModule,
-    MatExpansionModule,
+    MatExpansionModule, MatIconModule,
   ],
   exports: [
     CommonModule,
     PreviewComponent,
     MatButtonModule, MatTabsModule, MatInputModule, MatToolbarModule, MatCardModule,
     MatCheckboxModule, MatSelectModule, MatSliderModule, MatListModule,
-    MatExpansionModule,
+    MatExpansionModule, MatIconModule
   ],
 })
 export class SharedModule {

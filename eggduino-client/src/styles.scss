@@ -30,3 +30,7 @@ body {
     background-color: transparent;
     box-shadow: none;
 }
+
+.mat-expansion-panel-body > mat-action-row {
+    margin: 0 -24px -16px;
+}

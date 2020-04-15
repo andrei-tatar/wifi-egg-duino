@@ -290,10 +290,10 @@ void Web::begin()
             request->send(200, "application/json", "{}");
         });
 
-    _server.serveStatic("/", SPIFFS, "/client", "public,max-age=3600,immutable");
+    _server.serveStatic("/", SPIFFS, "/", "public,max-age=3600,immutable");
     _server.addHandler(&_ws);
     _server.onNotFound([](AsyncWebServerRequest *req) {
-        req->send(SPIFFS, "/client/index.html");
+        req->send(SPIFFS, "/index.html");
     });
 
     _ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {

@@ -1,71 +1,85 @@
 <mat-accordion>
-    <mat-expansion-panel>
+    <mat-expansion-panel (expandedChange)="$event&&refreshNetworks$.next()">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 Wi-Fi
             </mat-panel-title>
         </mat-expansion-panel-header>
-        TODO
+        <ng-container *ngIf="networks$|async as networks">
+            <mat-action-list class="network-list">
+                <button mat-list-item *ngFor="let network of networks" (click)="connectToNetwork(network)">
+                    <mat-icon matListIcon [svgIcon]="network.icon"></mat-icon>
+                    <h3 [class.font-bold]="network.current" matLine>
+                        {{network.ssid}}
+                    </h3>
+                    <p matLine *ngIf="network.status">
+                        {{network.status}}
+                    </p>
+                </button>
+            </mat-action-list>
+        </ng-container>
     </mat-expansion-panel>
 
-    <mat-expansion-panel #panel *ngIf="(motionParams$|async) as params">
+    <mat-expansion-panel (expandedChange)="$event&&refreshMotion$.next()">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 Motion
             </mat-panel-title>
         </mat-expansion-panel-header>
-        <div class="motion-details">
-            <mat-form-field>
-                <mat-label>Pen up value (%)</mat-label>
-                <input type="number" matInput placeholder="%" [value]="params.penUpPercent"
-                    (change)="params.penUpPercent=+$event.target.value">
-            </mat-form-field>
+        <ng-container *ngIf="motionParams$|async as params">
+            <div class="motion-details">
+                <mat-form-field>
+                    <mat-label>Pen up value (%)</mat-label>
+                    <input type="number" matInput placeholder="%" [value]="params.penUpPercent"
+                        (change)="params.penUpPercent=+$event.target.value">
+                </mat-form-field>
 
-            <mat-form-field>
-                <mat-label>Pen down value (%)</mat-label>
-                <input type="number" matInput placeholder="%" [value]="params.penDownPercent"
-                    (change)="params.penDownPercent=+$event.target.value">
-            </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Pen down value (%)</mat-label>
+                    <input type="number" matInput placeholder="%" [value]="params.penDownPercent"
+                        (change)="params.penDownPercent=+$event.target.value">
+                </mat-form-field>
 
-            <mat-form-field>
-                <mat-label>Drawing speed (steps/sec)</mat-label>
-                <input type="number" matInput placeholder="steps/sec" [value]="params.drawingSpeed"
-                    (change)="params.drawingSpeed=+$event.target.value">
-            </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Drawing speed (steps/sec)</mat-label>
+                    <input type="number" matInput placeholder="steps/sec" [value]="params.drawingSpeed"
+                        (change)="params.drawingSpeed=+$event.target.value">
+                </mat-form-field>
 
-            <mat-form-field>
-                <mat-label>Travel speed (steps/sec)</mat-label>
-                <input type="number" matInput placeholder="steps/sec" [value]="params.travelSpeed"
-                    (change)="params.travelSpeed=+$event.target.value">
-            </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Travel speed (steps/sec)</mat-label>
+                    <input type="number" matInput placeholder="steps/sec" [value]="params.travelSpeed"
+                        (change)="params.travelSpeed=+$event.target.value">
+                </mat-form-field>
 
-            <mat-form-field>
-                <mat-label>Pen move delay (msec)</mat-label>
-                <input type="number" matInput placeholder="msec" [value]="params.penMoveDelay"
-                    (change)="params.penMoveDelay=+$event.target.value">
-            </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Pen move delay (msec)</mat-label>
+                    <input type="number" matInput placeholder="msec" [value]="params.penMoveDelay"
+                        (change)="params.penMoveDelay=+$event.target.value">
+                </mat-form-field>
 
-            <mat-form-field>
-                <mat-label>Steps per rotation</mat-label>
-                <input type="number" matInput placeholder="inc. microsteps" [value]="params.stepsPerRotation"
-                    (change)="params.stepsPerRotation=+$event.target.value">
-            </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Steps per rotation</mat-label>
+                    <input type="number" matInput placeholder="inc. microsteps" [value]="params.stepsPerRotation"
+                        (change)="params.stepsPerRotation=+$event.target.value">
+                </mat-form-field>
 
-            <mat-checkbox [checked]="params.reversePen" (change)="params.reversePen=$event.checked">
-                Reverse pen motor
-            </mat-checkbox>
-            <mat-checkbox [checked]="params.reverseRotation" (change)="params.reverseRotation=$event.checked">
-                Reverse rotation motor
-            </mat-checkbox>
+                <mat-checkbox [checked]="params.reversePen" (change)="params.reversePen=$event.checked">
+                    Reverse pen motor
+                </mat-checkbox>
+                <mat-checkbox [checked]="params.reverseRotation" (change)="params.reverseRotation=$event.checked">
+                    Reverse rotation motor
+                </mat-checkbox>
 
-            <button mat-button (click)="sendCommand('pen-up')">Pen UP</button>
-            <button mat-button (click)="sendCommand('pen-down')">Pen DOWN</button>
+                <button mat-button (click)="sendCommand('pen-up')">Pen UP</button>
+                <button mat-button (click)="sendCommand('pen-down')">Pen DOWN</button>
 
-            <button mat-button (click)="sendCommand('motors-enable')">Motors ENABLE</button>
-            <button mat-button (click)="sendCommand('motors-disable')">Motors DISABLE</button>
-        </div>
-        <mat-action-row>
-            <button mat-button color="primary" (click)="updateMotionParams(params)">Save</button>
-        </mat-action-row>
+                <button mat-button (click)="sendCommand('motors-enable')">Motors ENABLE</button>
+                <button mat-button (click)="sendCommand('motors-disable')">Motors DISABLE</button>
+            </div>
+            <mat-action-row>
+                <button mat-button color="primary" (click)="updateMotionParams(params)">Save</button>
+            </mat-action-row>
+        </ng-container>
     </mat-expansion-panel>
 </mat-accordion>

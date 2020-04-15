@@ -3,25 +3,8 @@
     flex-direction: column;
 }
 
-.selection-details {
-    display: flex;
-    flex-direction: row;
-    overflow: hidden;
-
-    app-preview {
-        flex: 1;
-        overflow: hidden;
-    }
-
-    .actions {
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-
-        > * {
-            margin-bottom: 8px;
-        }
-    }
+app-preview {
+    margin: 0 -24px -16px;
 }
 
 .upload-button {

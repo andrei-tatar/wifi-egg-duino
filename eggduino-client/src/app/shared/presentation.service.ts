@@ -3,7 +3,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
-import { publish, refCount } from 'rxjs/operators';
+import { publish, refCount, ignoreElements } from 'rxjs/operators';
 import { MatSpinner } from '@angular/material/progress-spinner';
 
 export const Cancel = Symbol('cancel');
@@ -18,7 +18,7 @@ export class PresentationService {
         });
         return () => dialogRef.close();
     }).pipe(
-        publish(),
+        publish<never>(),
         refCount(),
     );
 
