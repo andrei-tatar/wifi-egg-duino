@@ -1,0 +1,13 @@
+<h1 mat-dialog-title>{{options.title}}</h1>
+<div mat-dialog-content>
+    <p>{{options.message}}</p>
+    <mat-form-field>
+        <mat-label>{{options.inputLabel}}</mat-label>
+        <input [type]="options.inputType" matInput #input cdkFocusInitial>
+    </mat-form-field>
+</div>
+<div mat-dialog-actions>
+    <button *ngIf="options.cancelMessage" mat-button (click)="onCancelClick()">{{options.cancelMessage}}</button>
+    <button mat-raised-button color="primary" [mat-dialog-close]="input.value"
+        cdkFocusInitial>{{options.okMessage}}</button>
+</div>

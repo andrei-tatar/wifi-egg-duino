@@ -1,8 +1,8 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 import { ApiService, MotionCommand, MotionParams, EncryptionType, Network } from '../shared/api.service';
-import { PresentationService } from '../shared/presentation.service';
-import { combineLatest, race, Subject } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { PresentationService, Cancel } from '../shared/presentation.service';
+import { combineLatest, race, Subject, of } from 'rxjs';
+import { map, switchMap, catchError, retryWhen, takeWhile, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-setup',
@@ -10,7 +10,8 @@ import { map, switchMap } from 'rxjs/operators';
   styleUrls: ['./setup.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SetupComponent {
+export class SetupComponent implements OnDestroy {
+  private destroy$ = new Subject();
 
   selected: 'wifi' | 'motion' | null = null;
 
@@ -57,8 +58,38 @@ export class SetupComponent {
   ) {
   }
 
-  connectToNetwork(network: Network) {
-    // TODO: ask user for password if required
+  ngOnDestroy() {
+    this.destroy$.next();
+  }
+
+  async connectToNetwork(network: Network) {
+    const password$ = network.encryptionType === EncryptionType.Open
+      ? of(undefined)
+      : this.presentationService.showInput({
+        title: 'Security',
+        message: 'The selected Wi-Fi network requires a password',
+        inputLabel: 'Password',
+        inputType: 'password',
+      });
+    try {
+      await password$.pipe(
+        switchMap(pass => this.api.wifiConnect({
+          ssid: network.ssid,
+          bssid: network.bssid,
+          password: pass,
+        })),
+        takeUntil(this.destroy$),
+      ).toPromise();
+    } catch (err) {
+      if (err !== Cancel) {
+        await this.presentationService
+          .showInformation({
+            title: 'Error',
+            message: `Could not connect to WiFi\n${err.message}`,
+          })
+          .toPromise();
+      }
+    }
   }
 
   toggle(cateogry: SetupComponent['selected']) {

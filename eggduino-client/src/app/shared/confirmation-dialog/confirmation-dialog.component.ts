@@ -5,7 +5,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
   selector: 'app-confirmation-dialog',
   templateUrl: './confirmation-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: ['.mat-dialog-content{white-space: pre-line;}']
+  styles: ['.mat-dialog-content{white-space: pre-line;} .mat-dialog-actions{justify-content: flex-end}']
 })
 export class ConfirmationDialogComponent {
 

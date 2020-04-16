@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <M5Stack.h>
 #include <WiFi.h>
+#include <DNSServer.h>
 
 #include "web.h"
 #include "printer.h"
@@ -8,15 +9,22 @@
 
 Printer printer;
 Web web(SD, printer);
+DNSServer dnsServer;
+
+void startAp()
+{
+  char ssid[14];
+  snprintf(ssid, sizeof(ssid), "EggBot-%04X", (uint16_t)(ESP.getEfuseMac() >> 32));
+  WiFi.softAP(ssid);
+}
 
 void setup()
 {
-  if (!WiFi.begin())
+  if (WiFi.begin() != WL_CONNECTED)
   {
-    char ssid[14];
-    snprintf(ssid, sizeof(ssid), "EggBot-%04X", (uint16_t)(ESP.getEfuseMac() >> 32));
-    WiFi.softAP(ssid, NULL);
+    startAp();
   }
+  dnsServer.start(53, "*", IPAddress(192, 168, 4, 1));
 
   M5.begin();
   M5.Lcd.setFreeFont(FSS12);
@@ -27,24 +35,26 @@ void setup()
 
 void loop()
 {
+  dnsServer.processNextRequest();
+
   uint32_t lastCheck = 0;
   if (millis() > lastCheck)
   {
-    lastCheck = millis() + 5000;
+    lastCheck = millis() + 10000;
 
-    if (WiFi.status() == WL_CONNECTED)
+    auto status = WiFi.status();
+    if (status == WL_CONNECTED)
     {
-      if (WiFi.getMode() & WIFI_MODE_AP)
-      {
-        WiFi.enableAP(false);
-      }
+      WiFi.enableAP(false);
     }
-    else
+    else if (status == WL_NO_SSID_AVAIL)
     {
-      if ((WiFi.getMode() & WIFI_MODE_AP) == 0)
-      {
-        WiFi.enableAP(true);
-      }
+      startAp();
+      WiFi.enableSTA(false);
+    }
+    else if (status == WL_DISCONNECTED)
+    {
+      startAp();
     }
   }
 

@@ -3,8 +3,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
-import { publish, refCount, ignoreElements } from 'rxjs/operators';
+import { publish, refCount } from 'rxjs/operators';
 import { MatSpinner } from '@angular/material/progress-spinner';
+import { InputDialogComponent } from './input-dialog/input-dialog.component';
 
 export const Cancel = Symbol('cancel');
 
@@ -71,6 +72,36 @@ export class PresentationService {
                     title,
                     message,
                     okMessage,
+                },
+            });
+
+            return dialogRef.afterClosed()
+                .subscribe(result => {
+                    if (result) {
+                        observer.next(result);
+                        observer.complete();
+                    } else {
+                        observer.error(Cancel);
+                    }
+                })
+                .add(() => dialogRef.close());
+        });
+    }
+
+    showInput({ title, message, inputLabel, okMessage = 'OK', cancelMessage = 'Cancel', inputType = 'text' }: {
+        title: string, message: string, okMessage?: string, cancelMessage?: string, inputType?: string, inputLabel: string,
+    }) {
+        return new Observable<string>(observer => {
+            const dialogRef = this.dialog.open(InputDialogComponent, {
+                disableClose: true,
+                maxWidth: '400px',
+                data: {
+                    title,
+                    message,
+                    okMessage,
+                    cancelMessage,
+                    inputType,
+                    inputLabel,
                 },
             });
 

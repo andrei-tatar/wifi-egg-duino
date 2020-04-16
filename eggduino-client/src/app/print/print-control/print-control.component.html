@@ -1,7 +1,7 @@
 <span>Status <b class="status-text">{{status}}</b> ({{progressPercent}}%)</span>
 <mat-progress-bar mode="determinate" [value]="progressPercent"></mat-progress-bar>
 <div class="action-buttons">
-    <button mat-raised-button color="primary" (click)="pauseContinuePrint()">{{primaryLabel}}</button>
+    <button mat-button (click)="pauseContinuePrint()">{{primaryLabel}}</button>
     <button mat-button color="warn" (click)="stopPrint()">Stop</button>
 </div>
 <app-preview [layers]="layers$|async" [lineNumber]="progress$|async" [showTravel]="true"></app-preview>

@@ -23,11 +23,13 @@ import { PresentationService } from './presentation.service';
 import { WebSocketService } from './ws.service';
 import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
 import { MatIconModule } from '@angular/material/icon';
+import { InputDialogComponent } from './input-dialog/input-dialog.component';
 
 @NgModule({
   declarations: [
     PreviewComponent,
     ConfirmationDialogComponent,
+    InputDialogComponent,
   ],
   imports: [
     CommonModule, HttpClientModule, MatSnackBarModule, MatDialogModule,

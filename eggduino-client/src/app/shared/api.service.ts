@@ -181,11 +181,11 @@ export class ApiService {
             url.append(key, `${value}`);
         }
         return race(
-            this.client.patch('api/wifi/connect', url.toString(), {
+            this.client.post('api/wifi/connect', url.toString(), {
                 headers: new HttpHeaders().append('Content-Type', 'application/x-www-form-urlencoded'),
             }),
             this.presentationService.globalLoader,
-        ).pipe(ignoreElements());
+        );
     }
 
     private getCacheKey(fileName: string) {
