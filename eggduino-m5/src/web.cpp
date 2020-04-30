@@ -1,6 +1,7 @@
 #include <SPIFFS.h>
 #include "web.h"
 #include "esp_wifi.h"
+#include <Update.h>
 
 const String extension = ".egg";
 
@@ -38,12 +39,29 @@ void Web::begin()
     _server.on("/api/file/*", HTTP_GET | HTTP_DELETE, std::bind(&Web::handleFileGetDelete, this, std::placeholders::_1));
 
     _server.on("/api/config", HTTP_GET, std::bind(&Web::handleConfigGet, this, std::placeholders::_1));
-    _server.on("/api/config", HTTP_POST,
-               std::bind(&Web::handleConfigUploadResponse, this, std::placeholders::_1),
-               std::bind(&Web::handleConfigUploadBody, this,
+    _server.on(
+        "/api/config", HTTP_POST, [](AsyncWebServerRequest *req) {},
+        NULL,
+        std::bind(&Web::handleConfigUpdate, this,
+                  std::placeholders::_1, std::placeholders::_2,
+                  std::placeholders::_3, std::placeholders::_4,
+                  std::placeholders::_5));
+
+    _server.on("/api/update", HTTP_POST,
+               std::bind(&Web::handleUpdateResponse, this, std::placeholders::_1),
+               std::bind(&Web::handleUpdateBody, this,
                          std::placeholders::_1, std::placeholders::_2,
                          std::placeholders::_3, std::placeholders::_4,
                          std::placeholders::_5, std::placeholders::_6));
+
+    _server.on("/api/reboot", HTTP_POST, [this](AsyncWebServerRequest *req) {
+        AsyncWebServerResponse *response = req->beginResponse(200, "text/plain", "OK");
+        response->addHeader("Connection", "close");
+        req->send(response);
+
+        delay(1000);
+        ESP.restart();
+    });
 
     _server.serveStatic("/", SPIFFS, "/", "public,max-age=3600,immutable");
     _server.addHandler(&_ws);
@@ -380,27 +398,48 @@ void Web::handleConfigGet(AsyncWebServerRequest *req)
     req->send(_fs, _rootPath + "/config.json");
 }
 
-void Web::handleConfigUploadResponse(AsyncWebServerRequest *req)
+void Web::handleConfigUpdate(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
-    if (req->_tempFile)
+    auto file = _fs.open(_rootPath + "/config.json", "w");
+    file.write(data, len);
+    file.close();
+    request->send(200, "application/json", "{}");
+}
+
+void Web::handleUpdateResponse(AsyncWebServerRequest *req)
+{
+    char json[150];
+    snprintf(json, sizeof(json), "{\"status\":\"%s\"}", Update.errorString());
+    req->send(Update.hasError() ? 500 : 200, "application/json", json);
+
+    if (Update.hasError())
     {
-        req->_tempFile.close();
-        req->send(200, "application/json", "{}");
-    }
-    else
-    {
-        req->send(400);
+        Update.clearError();
+        Update.abort();
     }
 }
 
-void Web::handleConfigUploadBody(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+void Web::handleUpdateBody(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
 {
     if (!index)
     {
-        request->_tempFile = _fs.open(_rootPath + "/config.json", "w");
+        if (filename.indexOf("spiffs") >= 0)
+        {
+            Update.begin(UPDATE_SIZE_UNKNOWN, U_SPIFFS);
+        }
+        else
+        {
+            Update.begin(UPDATE_SIZE_UNKNOWN, U_FLASH);
+        }
     }
-    if (len && request->_tempFile)
+
+    if (len)
     {
-        request->_tempFile.write(data, len);
+        Update.write(data, len);
+    }
+
+    if (final)
+    {
+        Update.end(true);
     }
 }

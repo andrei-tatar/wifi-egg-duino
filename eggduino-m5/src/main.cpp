@@ -37,10 +37,10 @@ void loop()
 {
   dnsServer.processNextRequest();
 
-  uint32_t lastCheck = 0;
-  if (millis() > lastCheck)
+  uint32_t nextCheck = 10000;
+  if (millis() > nextCheck)
   {
-    lastCheck = millis() + 10000;
+    nextCheck = millis() + 10000;
 
     auto status = WiFi.status();
     if (status == WL_CONNECTED)
