@@ -7,6 +7,10 @@ Based on the M5stack core platform (ESP32), this project aims to provide a refre
 
 If you like the project, find it useful and want to support me, consider donating [PayPal](https://paypal.me/andreitatar).
 
+## Demo
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/auzUlywlYKI/0.jpg)](https://www.youtube.com/watch?v=auzUlywlYKI)
+
 ## Development work
 
 Remaining things for a first release:
