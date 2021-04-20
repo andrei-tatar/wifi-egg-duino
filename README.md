@@ -15,7 +15,7 @@ If you like the project, find it useful and want to support me, consider donatin
 
 Remaining things for a first release:
 
-- [ ] WiFi setup - start firmware (or switch if unable to connect to a network) in AP mode. Allow changing the mode/wi-fi settings from the web client
+- [x] WiFi setup - start firmware (or switch if unable to connect to a network) in AP mode. Allow changing the mode/wi-fi settings from the web client
 - [ ] M5 UI - update M5 code to include UI to: start/pause/stop print, view progress and Wi-Fi settings (AP settings and/or IP in STA mode)
 - [ ] OTA - easier firmware update (removing dependencies for platformio or other tools after the first flash)
 
