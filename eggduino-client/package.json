@@ -24,7 +24,7 @@
     "dat.gui": "^0.7.7",
     "resize-observer-polyfill": "^1.5.1",
     "rxjs": "~6.5.4",
-    "three": "^0.125.0",
+    "three": "^0.137.0",
     "tslib": "^1.10.0",
     "zone.js": "~0.10.2"
   },
